@@ -21,9 +21,9 @@ To answer this question, please complete the tasks specified below using the dat
 Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is also provided in the dataset. 
 
 ```{r load data, echo = TRUE}
-load(file="./data/driving.RData")
+load(file = "./data/driving.RData")
 
-## please comment these calls in your work 
+## please comment these calls in your work
 glimpse(data)
 desc
 ```
