@@ -8,6 +8,9 @@ output:
 ```{r load packages, echo=FALSE, message=FALSE}
 library(tidyverse)
 library(patchwork)
+library(plm)
+library(lmtest)
+library(stargazer)
 ```
 
 
@@ -41,6 +44,7 @@ desc
 ```{r}
  
 df <- data %>% 
+  mutate(state = factor(state)) %>%
   rowwise() %>% 
   # speed_limit
   # TODO: what to do with rows where sl55 = 0.542 and sl65 = 0.458?
@@ -54,7 +58,7 @@ df <- data %>%
   select(-starts_with("sl")) %>%
   # year_of_observation
   # TODO: This is already in the column called "year". Why do we need this?
-  mutate(year_of_observation = year) %>%
+  mutate(year_of_observation = factor(year)) %>%
   select(-starts_with("d")) %>%
   # blood_alcohol_limit
   mutate(blood_alcohol_limit = parse_number(
@@ -98,7 +102,7 @@ df <- df %>%
            "total_nighttime_fatalities" = "nghtfat",
            "total_weekend_fatalities" = "wkndfat",
            "total_fatalities_per_100_million_miles" = "totfatpvm",	
-           "nighttime_fatalities_per_100_million_miles" = "nghtfatpvm",	
+           "nighttime_fatalities_per_100_million_miles" = "nghtfatpvm",
            "weekend_fatalities_per_100_million_miles" = "wkndfatpvm",
            "nighttime_fatalities_rate" = "nghtfatrte" ,
            "weekend_fatalities_rate" = "wkndfatrte",	
@@ -279,9 +283,9 @@ summary(mod.lm1)
 ```{r linear-model-with-some-features}
 # modeling on some positively correlated feature (picked purely by eyes)
 mod.lm2 <- lm(total_fatalities_rate ~ factor(year) + minimum_drinking_age 
-                                  + vehicle_miles + unemployment_rate
-                                  + vehicle_miles_per_capita + blood_alcohol_limit
-                                  + pct_population_aged_14_through_24, data=df)
++ vehicle_miles + unemployment_rate
++ vehicle_miles_per_capita + blood_alcohol_limit
++ pct_population_aged_14_through_24, data=df)
 summary(mod.lm2)
 ```
 
@@ -337,6 +341,26 @@ Which set of estimates do you think is more reliable? Why do you think this?
 - What assumptions are needed in each of these models?  
 - Are these assumptions reasonable in the current context?
 
+```{r}
+# estimate the fixed effects regression with plm()
+mod.fe <- plm(log(total_fatalities_rate) ~ factor(year)
+              + factor(blood_alcohol_limit)
+              + per_se_laws
+              + seatbelt
+              + speed_limit_70plus
+              + graduated_drivers_license_law
+              + pct_population_aged_14_through_24
+              + log(unemployment_rate)
+              + vehicle_miles_per_capita,, 
+                    data = df,
+                    index = c("state"), 
+                    model = "within")
+
+# print summary using robust standard errors
+coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
+
+```
+
 # (10 points) Consider a Random Effects Model 
 
 Instead of estimating a fixed effects model, should you have estimated a random effects model?
@@ -344,6 +368,11 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - Please state the assumptions of a random effects model, and evaluate whether these assumptions are met in the data. 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
+
+```{r}
+
+
+```
 
 # (10 points) Model Forecasts 
 
