@@ -282,7 +282,7 @@ mod.lm2 <- lm(total_fatalities_rate ~ factor(year) + minimum_drinking_age
                                   + vehicle_miles + unemployment_rate
                                   + vehicle_miles_per_capita + blood_alcohol_limit
                                   + pct_population_aged_14_through_24, data=df)
-summary(mod.lm1)
+summary(mod.lm2)
 ```
 
 # (15 points) Expanded Model 
