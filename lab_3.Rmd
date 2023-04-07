@@ -44,7 +44,8 @@ df <- data %>%
   rowwise() %>% 
   # speed_limit
   # TODO: what to do with rows where sl55 = 0.542 and sl65 = 0.458?
-  mutate(speed_limit = parse_number(
+  mutate(speed_limit_70plus = sl70plus,
+    speed_limit = parse_number(
      colnames(
        select(data, starts_with("sl")))[which.max(c_across(starts_with("sl")))],
      na='slnone'
@@ -62,6 +63,7 @@ df <- data %>%
        )/100) %>%
   select(-starts_with("bac")) %>%
   # 'seatbelt' already categorizes primary or secondary
+  mutate(seatbelt = factor(seatbelt)) %>%
   select(-starts_with("sb")) 
 
 df <- df %>%
@@ -69,7 +71,7 @@ rename(c("totfatrte" = "total_fatalities_rate",
          "minage" = "minimum_drinking_age",
          "zerotol" = "zero_tolerance_law",
          "gdl" = "graduated_drivers_license_law",
-         "perse" = "administrative_license_revocation",
+         "perse" = "per_se_laws",
          "totfat" = "total_traffic_fatalities",
          "nghtfat" = "total_nighttime_fatalities",
          "wkndfat" = "total_weekend_fatalities",
@@ -81,8 +83,8 @@ rename(c("totfatrte" = "total_fatalities_rate",
          "vehicmiles"	= "vehicle_miles",	
          "unem" = "unemployment_rate",
          "perc14_24"	= "pct_population_aged_14_through_24",
-         "sl70plus" = "speed_limit_70plus",
-         "vehicmilespc" = "vehicle_miles_pct"
+         # "sl70plus" = "speed_limit_70plus",
+         "vehicmilespc" = "vehicle_miles_per_capita"
          )) 
 
 df %>% glimpse
@@ -95,28 +97,44 @@ df %>% glimpse
     - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
   
 ```{r}
-p1 <- df %>%
-  select(total_traffic_fatalities, 
-         total_nighttime_fatalities, 
-         total_weekend_fatalities,
-         total_fatalities_per_100_million_miles, 
-         nighttime_fatalities_per_100_million_miles,
-         weekend_fatalities_per_100_million_miles,
-         statepop,
-         total_fatalities_rate,
+df %>%
+  select(total_fatalities_rate,
          nighttime_fatalities_rate,
          weekend_fatalities_rate,
+         statepop,
          vehicle_miles,
          unemployment_rate,
          pct_population_aged_14_through_24,
-         vehicle_miles_pct
+         vehicle_miles_per_capita
          ) %>%
   keep(is.numeric) %>% 
   gather() %>% 
   ggplot(aes(value)) +
     facet_wrap(~ key, scales = "free") +
     geom_histogram()
-     
+
+# hist(df$total_fatalities_rate)
+# hist(log(df$total_fatalities_rate))
+
+```
+
+> The distributions are left-skewed for these variables.
+
+```{r}
+    # - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+df %>%
+  group_by(year) %>%
+  summarise(avg_total_fatalities_rate = mean(total_fatalities_rate)) %>%
+  ggplot(aes(year, avg_total_fatalities_rate, label=round(avg_total_fatalities_rate,2))) +
+  geom_point() +
+  geom_text(hjust=0, vjust=0) + 
+  theme_bw() +
+  labs(title = "Average Total Fatalities by Year")
+```
+
+
+
+```{r}
 p2 <- df %>%
   ggplot(aes(x = total_fatalities_rate)) +
   geom_density(aes(
@@ -145,10 +163,23 @@ p4 <- df %>%
   xlab("total_fatalities_rate") +
   ylab("speed_limit")
 
+
+p6 <- df %>%
+  ggplot(aes(total_fatalities_rate, per_se_laws)) +
+  geom_boxplot(aes(fill = factor(per_se_laws)), show.legend=F) +
+  ggtitle("total_fatalities_rate by per_se_laws") +
+  theme(plot.title = element_text(lineheight = 1, face = "bold")) +
+  xlab("total_fatalities_rate") +
+  ylab("per_se_laws")
+
 p1
 p2
 p3
 p4
+p6
+
+
+
 ```
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
@@ -158,11 +189,22 @@ As with every EDA this semester, the goal of this EDA is not to document your ow
 Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004 and interpret what you observe. In this section, you should address the following tasks: 
 
 - Why is fitting a linear model a sensible starting place? 
+> Fitting a linear model helps identify significant explanatory variables and evaluate how strong the linear correlation is. 
+
 - What does this model explain, and what do you find in this model? 
+> This model explains whether a given year has a linear correlation with total fatalities rate. Based on the model, there is strong evidence that all the years except 1981 are correlated total fatalities rate at the significance level of 0.
+
 - Did driving become safer over this period? Please provide a detailed explanation.
+> In 1980, the average total fatalities rate was 24% and by 2004, the average total fatalities decreased down to 16%.
+
 - What, if any, are the limitation of this model. In answering this, please consider **at least**: 
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
     - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
+    
+```{r}
+mod.lm1 <- lm(total_fatalities_rate ~ factor(year), data=df)
+summary(mod.lm1)
+```
 
 # (15 points) Expanded Model 
 
@@ -178,11 +220,30 @@ Expand the **Preliminary Model** by adding variables related to the following co
 - Unemployment rate
 - Vehicle miles driven per capita. 
 
-If it is appropriate, include transformations of these variables. Please carefully explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed. 
+If it is appropriate, include transformations of these variables. Please carefully explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed.
+> A log transformation is applied to total_fatalities_rate and unemployment_rate because the skewed distribution needs to be normalized. 
 
+```{r}
+mod.lm2 <- lm(log(total_fatalities_rate) ~ factor(year)
+              + factor(blood_alcohol_limit)
+              + per_se_laws
+              + seatbelt
+              + speed_limit_70plus
+              + graduated_drivers_license_law
+              + pct_population_aged_14_through_24
+              + log(unemployment_rate)
+              + vehicle_miles_per_capita,
+             data=df)
+summary(mod.lm2)
+
+```
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
+
 - Do *per se laws* have a negative effect on the fatality rate? 
-- Does having a primary seat belt law? 
+> *per se laws* have a negative effect on the fatality rate, but the variable yielded a p-value > 0.1 thus suggesting that there is weak evidence it is correlated with fatality rate.
+
+- Does having a primary seat belt law?
+> *primary seatbelt laws* also has a negative effect on the fatality rate, but the variable yielded a p-value > 0.1 thus suggesting that there is weak evidence it is correlated with fatality rate.
 
 # (15 points) State-Level Fixed Effects 
 
