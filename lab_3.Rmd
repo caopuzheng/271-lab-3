@@ -66,32 +66,55 @@ df <- data %>%
   mutate(seatbelt = factor(seatbelt)) %>%
   select(-starts_with("sb")) 
 
+# This doesn't quite work on the cloud
+# df <- df %>%
+# rename(c("totfatrte" = "total_fatalities_rate",
+#          "minage" = "minimum_drinking_age",
+#          "zerotol" = "zero_tolerance_law",
+#          "gdl" = "graduated_drivers_license_law",
+#          "perse" = "per_se_laws",
+#          "totfat" = "total_traffic_fatalities",
+#          "nghtfat" = "total_nighttime_fatalities",
+#          "wkndfat" = "total_weekend_fatalities",
+#          "totfatpvm" = "total_fatalities_per_100_million_miles",	
+#          "nghtfatpvm" = "nighttime_fatalities_per_100_million_miles",	
+#          "wkndfatpvm" = "weekend_fatalities_per_100_million_miles",
+#          "nghtfatrte"	= "nighttime_fatalities_rate",
+#          "wkndfatrte" =	"weekend_fatalities_rate",	
+#          "vehicmiles"	= "vehicle_miles",	
+#          "unem" = "unemployment_rate",
+#          "perc14_24"	= "pct_population_aged_14_through_24",
+#          # "sl70plus" = "speed_limit_70plus",
+#          "vehicmilespc" = "vehicle_miles_per_capita"
+#          )) 
+
 df <- df %>%
-rename(c("totfatrte" = "total_fatalities_rate",
-         "minage" = "minimum_drinking_age",
-         "zerotol" = "zero_tolerance_law",
-         "gdl" = "graduated_drivers_license_law",
-         "perse" = "per_se_laws",
-         "totfat" = "total_traffic_fatalities",
-         "nghtfat" = "total_nighttime_fatalities",
-         "wkndfat" = "total_weekend_fatalities",
-         "totfatpvm" = "total_fatalities_per_100_million_miles",	
-         "nghtfatpvm" = "nighttime_fatalities_per_100_million_miles",	
-         "wkndfatpvm" = "weekend_fatalities_per_100_million_miles",
-         "nghtfatrte"	= "nighttime_fatalities_rate",
-         "wkndfatrte" =	"weekend_fatalities_rate",	
-         "vehicmiles"	= "vehicle_miles",	
-         "unem" = "unemployment_rate",
-         "perc14_24"	= "pct_population_aged_14_through_24",
-         # "sl70plus" = "speed_limit_70plus",
-         "vehicmilespc" = "vehicle_miles_per_capita"
-         )) 
+  rename(c("total_fatalities_rate" = "totfatrte",
+           "minimum_drinking_age" = "minage",
+           "zero_tolerance_law" = "zerotol",
+           "graduated_drivers_license_law" = "gdl",
+           "per_se_laws" = "perse",
+           "total_traffic_fatalities" = "totfat",
+           "total_nighttime_fatalities" = "nghtfat",
+           "total_weekend_fatalities" = "wkndfat",
+           "total_fatalities_per_100_million_miles" = "totfatpvm",	
+           "nighttime_fatalities_per_100_million_miles" = "nghtfatpvm",	
+           "weekend_fatalities_per_100_million_miles" = "wkndfatpvm",
+           "nighttime_fatalities_rate" = "nghtfatrte" ,
+           "weekend_fatalities_rate" = "wkndfatrte",	
+           "vehicle_miles" = "vehicmiles",	
+           "unemployment_rate"= "unem",
+           "pct_population_aged_14_through_24" = "perc14_24",
+           "vehicle_miles_per_capita" = "vehicmilespc"))
 
 df %>% glimpse
 ```
-    
+
 2. (5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
     - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+    
+This data set contains data for the 48 continental U.S. states from 1980 through 2004 and contains cross sectional measurements of fatality rate based on varaious condition ranging from vehicle, operators, and state level information. There are 1,200 observations in the data set with 3 one-hot-encoded variables, 'speed limit', 'bac', and 'year of observation'. This data is collected and distributed by Jeffrey M. Wooldridge through this [link](https://github.com/JustinMShea/wooldridge). In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population	
+    
 3. (20 points) Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable `total_fatalities_rate` and the potential explanatory variables. Minimally, this should include: 
     - How is the our dependent variable of interest `total_fatalities_rate` defined? 
     - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
@@ -172,17 +195,64 @@ p6 <- df %>%
   xlab("total_fatalities_rate") +
   ylab("per_se_laws")
 
-p1
+# p1
 p2
 p3
 p4
 p6
 
+```
+
+```{r cross-sectional-plot, fig.height=6, fig.width=8}
+df %>%
+  ggplot(aes(year,total_fatalities_rate,color=state)) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm") +
+  facet_wrap(~state) +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none",axis.text.x=element_text(angle=45,hjust=1,vjust=1,size=8),
+        axis.text.y=element_text(size=8)) +
+  theme(strip.text=element_text(size=4)) +
+  scale_y_continuous(label=percent) +
+  xlab("State") +
+  ylab("Total Fatalities Rate")
+```
+```{r pairplot-on-feature-of-interest, fig.height=5, fig.width=6}
+df  %>%
+  select(-c(state,year,year_of_observation,seatbelt)) %>%
+  melt(id.vars=c("total_fatalities_rate")) %>%
+  ggplot(aes(value,total_fatalities_rate,color=variable)) +
+  geom_point(alpha=0.4) +
+  geom_smooth(method="lm") +
+  facet_wrap(~variable,scales="free_x") +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none",axis.text.x=element_text(angle=45,hjust=1,vjust=1,size=8),
+        axis.text.y=element_text(size=8)) +
+  theme(strip.text=element_text(size=6)) +
+  scale_y_continuous(label=percent) +
+  xlab("year") +
+  ylab("Total Fatality Rate")
+```
 
 
+
+```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
+
+df %>%
+  select(-c(state,year,year_of_observation,seatbelt,total_fatalities_rate))  %>%
+  cor() %>%
+  melt() %>%
+  ggplot(aes(Var1,Var2,fill=value)) +
+  geom_tile() +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.title=element_blank(),legend.text=element_text(size=10),
+        axis.text.x=element_text(angle=45,hjust=1,vjust=1)) +
+  scale_fill_gradient2(low="cornflowerblue",high="coral",mid="white",
+                       midpoint=0,limit=c(-1,1))
 ```
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
+
 
 # (15 points) Preliminary Model
 
@@ -201,8 +271,17 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
     - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
     
-```{r}
+```{r simple-linear-model}
 mod.lm1 <- lm(total_fatalities_rate ~ factor(year), data=df)
+summary(mod.lm1)
+```
+
+```{r linear-model-with-some-features}
+# modeling on some positively correlated feature (picked purely by eyes)
+mod.lm2 <- lm(total_fatalities_rate ~ factor(year) + minimum_drinking_age 
+                                  + vehicle_miles + unemployment_rate
+                                  + vehicle_miles_per_capita + blood_alcohol_limit
+                                  + pct_population_aged_14_through_24, data=df)
 summary(mod.lm1)
 ```
 
