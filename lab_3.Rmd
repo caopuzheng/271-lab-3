@@ -12,16 +12,24 @@ library(stargazer)
 library(tidyverse)
 library(patchwork)
 
-if(!"ggthemes"%in%rownames(installed.packages())) {install.packages("ggthemes")}
+if (!"ggthemes" %in% rownames(installed.packages())) {
+  install.packages("ggthemes")
+}
 library(ggthemes)
 
-if(!"scales"%in%rownames(installed.packages())) {install.packages("scales")}
+if (!"scales" %in% rownames(installed.packages())) {
+  install.packages("scales")
+}
 library(scales)
 
-if(!"mgcv"%in%rownames(installed.packages())) {install.packages("mgcv")}
+if (!"mgcv" %in% rownames(installed.packages())) {
+  install.packages("mgcv")
+}
 library(mgcv)
 
-if(!"reshape2"%in%rownames(installed.packages())) {install.packages("reshape2")}
+if (!"reshape2" %in% rownames(installed.packages())) {
+  install.packages("reshape2")
+}
 library(reshape2)
 ```
 
@@ -54,19 +62,20 @@ desc
     - Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series). 
     - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
 ```{r}
- 
-df <- data %>% 
+df <- data %>%
   mutate(state = factor(state)) %>%
-  rowwise() %>% 
+  rowwise() %>%
   # speed_limit
   # TODO: what to do with rows where sl55 = 0.542 and sl65 = 0.458?
-  mutate(speed_limit_70plus = factor(sl70plus),
+  mutate(
+    speed_limit_70plus = factor(sl70plus),
     speed_limit = parse_number(
-     colnames(
-       select(data, starts_with("sl")))[which.max(c_across(starts_with("sl")))],
-     na='slnone'
-     ),
-     ) %>%
+      colnames(
+        select(data, starts_with("sl"))
+      )[which.max(c_across(starts_with("sl")))],
+      na = "slnone"
+    ),
+  ) %>%
   select(-starts_with("sl")) %>%
   # year_of_observation
   # TODO: This is already in the column called "year". Why do we need this?
@@ -74,16 +83,16 @@ df <- data %>%
   select(-starts_with("d")) %>%
   # blood_alcohol_limit
   mutate(blood_alcohol_limit = parse_number(
-     colnames(
-       select(data, starts_with("bac")))[which.max(c_across(starts_with("bac")))]
-       )/100) %>%
+    colnames(
+      select(data, starts_with("bac"))
+    )[which.max(c_across(starts_with("bac")))]
+  ) / 100) %>%
   select(-starts_with("bac")) %>%
   # 'seatbelt' already categorizes primary or secondary
   mutate(seatbelt = factor(seatbelt)) %>%
   # speed_limit_70plus column has values that are not 0 or 1, reclassify based on speed_limit column
-  mutate(speed_limit_70plus = ifelse(speed_limit==55 | speed_limit==65 , 0, 1)) %>%
-
-  select(-starts_with("sb")) 
+  mutate(speed_limit_70plus = ifelse(speed_limit == 55 | speed_limit == 65, 0, 1)) %>%
+  select(-starts_with("sb"))
 
 # This doesn't quite work on the cloud
 # df <- df %>%
@@ -108,73 +117,75 @@ df <- data %>%
 #          ))
 
 df <- df %>%
-  rename(c("total_fatalities_rate" = "totfatrte",
-           "minimum_drinking_age" = "minage",
-           "zero_tolerance_law" = "zerotol",
-           "graduated_drivers_license_law" = "gdl",
-           "per_se_laws" = "perse",
-           "total_traffic_fatalities" = "totfat",
-           "total_nighttime_fatalities" = "nghtfat",
-           "total_weekend_fatalities" = "wkndfat",
-           "total_fatalities_per_100_million_miles" = "totfatpvm",
-           "nighttime_fatalities_per_100_million_miles" = "nghtfatpvm",
-           "weekend_fatalities_per_100_million_miles" = "wkndfatpvm",
-           "nighttime_fatalities_rate" = "nghtfatrte" ,
-           "weekend_fatalities_rate" = "wkndfatrte",
-           "vehicle_miles" = "vehicmiles",
-           "unemployment_rate"= "unem",
-           "pct_population_aged_14_through_24" = "perc14_24",
-           "vehicle_miles_per_capita" = "vehicmilespc")) %>%
-  #keep the similar variables together
-  select(year_of_observation,
-         state,
-         year,
-         #response variables
-         total_fatalities_rate,
-         nighttime_fatalities_rate,
-         weekend_fatalities_rate,
-         total_traffic_fatalities,
-         total_nighttime_fatalities,
-         total_weekend_fatalities,
-         total_fatalities_per_100_million_miles,
-         nighttime_fatalities_per_100_million_miles,
-         weekend_fatalities_per_100_million_miles,
-         #potential explanatory variables
-         seatbelt, 
-         zero_tolerance_law, 
-         graduated_drivers_license_law, 
-         per_se_laws, 
-         minimum_drinking_age, 
-         speed_limit_70plus, 
-         speed_limit, 
-         blood_alcohol_limit,
-         vehicle_miles, 
-         vehicle_miles_per_capita,
-         #econ and demographic variables
-         statepop, 
-         unemployment_rate, 
-         pct_population_aged_14_through_24,vehicle_miles
-         )
+  rename(c(
+    "total_fatalities_rate" = "totfatrte",
+    "minimum_drinking_age" = "minage",
+    "zero_tolerance_law" = "zerotol",
+    "graduated_drivers_license_law" = "gdl",
+    "per_se_laws" = "perse",
+    "total_traffic_fatalities" = "totfat",
+    "total_nighttime_fatalities" = "nghtfat",
+    "total_weekend_fatalities" = "wkndfat",
+    "total_fatalities_per_100_million_miles" = "totfatpvm",
+    "nighttime_fatalities_per_100_million_miles" = "nghtfatpvm",
+    "weekend_fatalities_per_100_million_miles" = "wkndfatpvm",
+    "nighttime_fatalities_rate" = "nghtfatrte",
+    "weekend_fatalities_rate" = "wkndfatrte",
+    "vehicle_miles" = "vehicmiles",
+    "unemployment_rate" = "unem",
+    "pct_population_aged_14_through_24" = "perc14_24",
+    "vehicle_miles_per_capita" = "vehicmilespc"
+  )) %>%
+  # keep the similar variables together
+  select(
+    year_of_observation,
+    state,
+    year,
+    # response variables
+    total_fatalities_rate,
+    nighttime_fatalities_rate,
+    weekend_fatalities_rate,
+    total_traffic_fatalities,
+    total_nighttime_fatalities,
+    total_weekend_fatalities,
+    total_fatalities_per_100_million_miles,
+    nighttime_fatalities_per_100_million_miles,
+    weekend_fatalities_per_100_million_miles,
+    # potential explanatory variables
+    seatbelt,
+    zero_tolerance_law,
+    graduated_drivers_license_law,
+    per_se_laws,
+    minimum_drinking_age,
+    speed_limit_70plus,
+    speed_limit,
+    blood_alcohol_limit,
+    vehicle_miles,
+    vehicle_miles_per_capita,
+    # econ and demographic variables
+    statepop,
+    unemployment_rate,
+    pct_population_aged_14_through_24, vehicle_miles
+  )
 
-df %>% glimpse
+df %>% glimpse()
 ```
 ```{r}
 table(df$zero_tolerance_law)
 # TODO:  Should we make all values (39) not equal to 0 or 1 to 1 and make it a factor variable
 df %>%
-  filter(zero_tolerance_law!=0 & zero_tolerance_law!=1)
+  filter(zero_tolerance_law != 0 & zero_tolerance_law != 1)
 # TODO:  Should we make all values (20 )  not equal to 0 or 1 to 1 and make it a factor variable
 table(df$graduated_drivers_license_law)
 
 df %>%
-  filter(graduated_drivers_license_law!=0 & graduated_drivers_license_law!=1)
+  filter(graduated_drivers_license_law != 0 & graduated_drivers_license_law != 1)
 
 # TODO:  Should we make all values (27) not equal to 0 or 1 to 1 and make it a factor variable
 table(df$per_se_laws)
 
 df %>%
-  filter(per_se_laws!=0 & per_se_laws!=1)
-
+  filter(per_se_laws != 0 & per_se_laws != 1)
 ```
 
 
@@ -202,44 +213,45 @@ df %>%
   
 ```{r}
 df %>%
-  select(total_fatalities_rate,
-         nighttime_fatalities_rate,
-         weekend_fatalities_rate,
-         vehicle_miles,
-         vehicle_miles_per_capita,
-         statepop,
-         unemployment_rate,
-         pct_population_aged_14_through_24
-         ) %>%
-  keep(is.numeric) %>% 
-  gather() %>% 
+  select(
+    total_fatalities_rate,
+    nighttime_fatalities_rate,
+    weekend_fatalities_rate,
+    vehicle_miles,
+    vehicle_miles_per_capita,
+    statepop,
+    unemployment_rate,
+    pct_population_aged_14_through_24
+  ) %>%
+  keep(is.numeric) %>%
+  gather() %>%
   ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free") +
-    geom_histogram()
+  facet_wrap(~key, scales = "free") +
+  geom_histogram()
 
 # hist(df$total_fatalities_rate)
 # hist(log(df$total_fatalities_rate))
-
 ```
 
 > For the continuous variables, the distributions are right-skewed for most of these variables.
 
 ```{r}
 df %>%
-  select(seatbelt, 
-         zero_tolerance_law, 
-         graduated_drivers_license_law, 
-         per_se_laws, 
-         minimum_drinking_age, 
-         speed_limit_70plus, 
-         speed_limit,
-         blood_alcohol_limit
-         ) %>%
-  keep(is.numeric) %>% 
-  gather() %>% 
+  select(
+    seatbelt,
+    zero_tolerance_law,
+    graduated_drivers_license_law,
+    per_se_laws,
+    minimum_drinking_age,
+    speed_limit_70plus,
+    speed_limit,
+    blood_alcohol_limit
+  ) %>%
+  keep(is.numeric) %>%
+  gather() %>%
   ggplot(aes(value)) +
-    facet_wrap(~ key, scales = "free") +
-    geom_histogram()
+  facet_wrap(~key, scales = "free") +
+  geom_histogram()
 ```
 
  We observed the following distribution for these categorical variables
@@ -250,22 +262,21 @@ df %>%
  - Per se laws and Zero tolence law are split between 0 and 1
 
 ```{r}
-    # - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+# - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset?
 df_avg <- df %>%
   group_by(year) %>%
-  summarise(avg_total_fatalities_rate = mean(total_fatalities_rate)) 
-#average fatality by year
-years = unique(df$year)
-avg_df <- data.frame(year = years, avg_fatality = round(df_avg$avg_total_fatalities_rate,2))
+  summarise(avg_total_fatalities_rate = mean(total_fatalities_rate))
+# average fatality by year
+years <- unique(df$year)
+avg_df <- data.frame(year = years, avg_fatality = round(df_avg$avg_total_fatalities_rate, 2))
 
-#plot fatality by year
+# plot fatality by year
 df_avg %>%
-  ggplot(aes(year, avg_total_fatalities_rate, label=round(avg_total_fatalities_rate,2))) +
+  ggplot(aes(year, avg_total_fatalities_rate, label = round(avg_total_fatalities_rate, 2))) +
   geom_point() +
-  geom_text(hjust=0, vjust=-0.5) + 
+  geom_text(hjust = 0, vjust = -0.5) +
   theme_bw() +
   labs(title = "Average Total Fatalities by Year")
-
 ```
 
 
@@ -302,7 +313,7 @@ p4 <- df %>%
 
 p6 <- df %>%
   ggplot(aes(total_fatalities_rate, per_se_laws)) +
-  geom_boxplot(aes(fill = factor(per_se_laws)), show.legend=F) +
+  geom_boxplot(aes(fill = factor(per_se_laws)), show.legend = F) +
   ggtitle("total_fatalities_rate by per_se_laws") +
   theme(plot.title = element_text(lineheight = 1, face = "bold")) +
   xlab("total_fatalities_rate") +
@@ -313,35 +324,38 @@ p2
 p3
 p4
 p6
-
 ```
 
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
 df %>%
-  ggplot(aes(year,total_fatalities_rate,color=state)) +
-  geom_point(alpha=0.4) +
-  geom_smooth(method="lm") +
+  ggplot(aes(year, total_fatalities_rate, color = state)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm") +
   facet_wrap(~state) +
-  theme_economist_white(gray_bg=F) +
-  theme(legend.position="none",axis.text.x=element_text(angle=45,hjust=1,vjust=1,size=8),
-        axis.text.y=element_text(size=8)) +
-  theme(strip.text=element_text(size=4)) +
-  scale_y_continuous(label=percent) +
+  theme_economist_white(gray_bg = F) +
+  theme(
+    legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
+    axis.text.y = element_text(size = 8)
+  ) +
+  theme(strip.text = element_text(size = 4)) +
+  scale_y_continuous(label = percent) +
   xlab("State") +
   ylab("Total Fatalities Rate")
 ```
 ```{r pairplot-on-feature-of-interest, fig.height=5, fig.width=6}
-df  %>%
-  select(-c(state,year,year_of_observation,seatbelt)) %>%
-  melt(id.vars=c("total_fatalities_rate")) %>%
-  ggplot(aes(value, total_fatalities_rate ,color=variable)) +
-  geom_point(alpha=0.4) +
-  geom_smooth(method="lm") +
-  facet_wrap(~variable,scales="free_x") +
+df %>%
+  select(-c(state, year, year_of_observation, seatbelt)) %>%
+  melt(id.vars = c("total_fatalities_rate")) %>%
+  ggplot(aes(value, total_fatalities_rate, color = variable)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm") +
+  facet_wrap(~variable, scales = "free_x") +
   # theme_economist_white(gray_bg=F) +
-  theme(legend.position="none",axis.text.x=element_text(angle=45,hjust=1,vjust=1,size=8),
-        axis.text.y=element_text(size=8)) +
-  theme(strip.text=element_text(size=6)) +
+  theme(
+    legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
+    axis.text.y = element_text(size = 8)
+  ) +
+  theme(strip.text = element_text(size = 6)) +
   # scale_y_continuous(label=percent) +
   xlab("year") +
   ylab("Total Fatality Rate")
@@ -351,16 +365,20 @@ df  %>%
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
 df %>%
-  select(-c(state,year,year_of_observation,seatbelt,total_fatalities_rate))  %>%
+  select(-c(state, year, year_of_observation, seatbelt, total_fatalities_rate)) %>%
   cor() %>%
   melt() %>%
-  ggplot(aes(Var1,Var2,fill=value)) +
+  ggplot(aes(Var1, Var2, fill = value)) +
   geom_tile() +
-  theme_economist_white(gray_bg=F) +
-  theme(legend.title=element_blank(),legend.text=element_text(size=10),
-        axis.text.x=element_text(angle=45,hjust=1,vjust=1)) +
-  scale_fill_gradient2(low="cornflowerblue",high="coral",mid="white",
-                       midpoint=0,limit=c(-1,1))
+  theme_economist_white(gray_bg = F) +
+  theme(
+    legend.title = element_blank(), legend.text = element_text(size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)
+  ) +
+  scale_fill_gradient2(
+    low = "cornflowerblue", high = "coral", mid = "white",
+    midpoint = 0, limit = c(-1, 1)
+  )
 ```
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
@@ -384,7 +402,7 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
     - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
     
 ```{r simple-linear-model}
-mod.lm1 <- lm(total_fatalities_rate ~ factor(year), data=df)
+mod.lm1 <- lm(total_fatalities_rate ~ factor(year), data = df)
 summary(mod.lm1)
 ```
 
@@ -407,18 +425,19 @@ If it is appropriate, include transformations of these variables. Please careful
 > A log transformation is applied to total_fatalities_rate and unemployment_rate because the skewed distribution needs to be normalized. 
 
 ```{r}
-mod.lm2 <- lm(log(total_fatalities_rate) ~ factor(year)
-              + factor(blood_alcohol_limit)
-              + per_se_laws
-              + seatbelt
-              + speed_limit_70plus
-              + graduated_drivers_license_law
-              + pct_population_aged_14_through_24
-              + log(unemployment_rate)
-              + vehicle_miles_per_capita,
-             data=df)
+mod.lm2 <- lm(
+  log(total_fatalities_rate) ~ factor(year)
+    + factor(blood_alcohol_limit)
+    + per_se_laws
+    + seatbelt
+    + speed_limit_70plus
+    + graduated_drivers_license_law
+    + pct_population_aged_14_through_24
+    + log(unemployment_rate)
+    + vehicle_miles_per_capita,
+  data = df
+)
 summary(mod.lm2)
-
 ```
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 
@@ -443,22 +462,23 @@ Which set of estimates do you think is more reliable? Why do you think this?
 
 ```{r}
 # estimate the fixed effects regression with plm()
-mod.fe <- plm(log(total_fatalities_rate) ~ factor(year)
-              + factor(blood_alcohol_limit)
-              + per_se_laws
-              + seatbelt
-              + speed_limit_70plus
-              + graduated_drivers_license_law
-              + pct_population_aged_14_through_24
-              + log(unemployment_rate)
-              + vehicle_miles_per_capita,, 
-                    data = df,
-                    index = c("state"), 
-                    model = "within")
+mod.fe <- plm(
+  log(total_fatalities_rate) ~ factor(year)
+    + factor(blood_alcohol_limit)
+    + per_se_laws
+    + seatbelt
+    + speed_limit_70plus
+    + graduated_drivers_license_law
+    + pct_population_aged_14_through_24
+    + log(unemployment_rate)
+    + vehicle_miles_per_capita, ,
+  data = df,
+  index = c("state"),
+  model = "within"
+)
 
 # print summary using robust standard errors
 coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
-
 ```
 
 # (10 points) Consider a Random Effects Model 
@@ -475,18 +495,20 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 
 ```{r random-effect-model estimate}
-re.model <- plm(log(total_fatalities_rate) ~ factor(year)
-              + factor(blood_alcohol_limit)
-              + per_se_laws
-              + seatbelt
-              + speed_limit_70plus
-              + graduated_drivers_license_law
-              + pct_population_aged_14_through_24
-              + log(unemployment_rate)
-              + vehicle_miles_per_capita, 
-                data = df,
-                index = c("state"),
-                model="random")
+re.model <- plm(
+  log(total_fatalities_rate) ~ factor(year)
+    + factor(blood_alcohol_limit)
+    + per_se_laws
+    + seatbelt
+    + speed_limit_70plus
+    + graduated_drivers_license_law
+    + pct_population_aged_14_through_24
+    + log(unemployment_rate)
+    + vehicle_miles_per_capita,
+  data = df,
+  index = c("state"),
+  model = "random"
+)
 
 summary(re.model)
 ```
@@ -503,6 +525,13 @@ The COVID-19 pandemic dramatically changed patterns of driving. Find data (and i
   - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving? 
   - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving? 
   
+> We have collected the United States Motor Vehicle Miles Traveled Total (Millions) data from the US Department of Transformation. This data is available at here [https://www.fhwa.dot.gov/policyinformation/statistics/2021/vm202.cfm]. 
+
+> We have downloaded the data that is compiled by Bloomberg (under ticker: VMTDVCLE Index) and saved it in the file `data/VMTDVCLE.csv`.
+
+```{r monthly-miles-driven-covid}
+
+```
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
