@@ -6,11 +6,23 @@ output:
 ---
 
 ```{r load packages, echo=FALSE, message=FALSE}
-library(tidyverse)
-library(patchwork)
 library(plm)
 library(lmtest)
 library(stargazer)
+library(tidyverse)
+library(patchwork)
+
+if(!"ggthemes"%in%rownames(installed.packages())) {install.packages("ggthemes")}
+library(ggthemes)
+
+if(!"scales"%in%rownames(installed.packages())) {install.packages("scales")}
+library(scales)
+
+if(!"mgcv"%in%rownames(installed.packages())) {install.packages("mgcv")}
+library(mgcv)
+
+if(!"reshape2"%in%rownames(installed.packages())) {install.packages("reshape2")}
+library(reshape2)
 ```
 
 
@@ -71,45 +83,45 @@ df <- data %>%
   select(-starts_with("sb")) 
 
 # This doesn't quite work on the cloud
-# df <- df %>%
-# rename(c("totfatrte" = "total_fatalities_rate",
-#          "minage" = "minimum_drinking_age",
-#          "zerotol" = "zero_tolerance_law",
-#          "gdl" = "graduated_drivers_license_law",
-#          "perse" = "per_se_laws",
-#          "totfat" = "total_traffic_fatalities",
-#          "nghtfat" = "total_nighttime_fatalities",
-#          "wkndfat" = "total_weekend_fatalities",
-#          "totfatpvm" = "total_fatalities_per_100_million_miles",	
-#          "nghtfatpvm" = "nighttime_fatalities_per_100_million_miles",	
-#          "wkndfatpvm" = "weekend_fatalities_per_100_million_miles",
-#          "nghtfatrte"	= "nighttime_fatalities_rate",
-#          "wkndfatrte" =	"weekend_fatalities_rate",	
-#          "vehicmiles"	= "vehicle_miles",	
-#          "unem" = "unemployment_rate",
-#          "perc14_24"	= "pct_population_aged_14_through_24",
-#          # "sl70plus" = "speed_limit_70plus",
-#          "vehicmilespc" = "vehicle_miles_per_capita"
-#          )) 
-
 df <- df %>%
-  rename(c("total_fatalities_rate" = "totfatrte",
-           "minimum_drinking_age" = "minage",
-           "zero_tolerance_law" = "zerotol",
-           "graduated_drivers_license_law" = "gdl",
-           "per_se_laws" = "perse",
-           "total_traffic_fatalities" = "totfat",
-           "total_nighttime_fatalities" = "nghtfat",
-           "total_weekend_fatalities" = "wkndfat",
-           "total_fatalities_per_100_million_miles" = "totfatpvm",	
-           "nighttime_fatalities_per_100_million_miles" = "nghtfatpvm",
-           "weekend_fatalities_per_100_million_miles" = "wkndfatpvm",
-           "nighttime_fatalities_rate" = "nghtfatrte" ,
-           "weekend_fatalities_rate" = "wkndfatrte",	
-           "vehicle_miles" = "vehicmiles",	
-           "unemployment_rate"= "unem",
-           "pct_population_aged_14_through_24" = "perc14_24",
-           "vehicle_miles_per_capita" = "vehicmilespc"))
+rename(c("totfatrte" = "total_fatalities_rate",
+         "minage" = "minimum_drinking_age",
+         "zerotol" = "zero_tolerance_law",
+         "gdl" = "graduated_drivers_license_law",
+         "perse" = "per_se_laws",
+         "totfat" = "total_traffic_fatalities",
+         "nghtfat" = "total_nighttime_fatalities",
+         "wkndfat" = "total_weekend_fatalities",
+         "totfatpvm" = "total_fatalities_per_100_million_miles",
+         "nghtfatpvm" = "nighttime_fatalities_per_100_million_miles",
+         "wkndfatpvm" = "weekend_fatalities_per_100_million_miles",
+         "nghtfatrte"	= "nighttime_fatalities_rate",
+         "wkndfatrte" =	"weekend_fatalities_rate",
+         "vehicmiles"	= "vehicle_miles",
+         "unem" = "unemployment_rate",
+         "perc14_24"	= "pct_population_aged_14_through_24",
+         # "sl70plus" = "speed_limit_70plus",
+         "vehicmilespc" = "vehicle_miles_per_capita"
+         ))
+
+# df <- df %>%
+#   rename(c("total_fatalities_rate" = "totfatrte",
+#            "minimum_drinking_age" = "minage",
+#            "zero_tolerance_law" = "zerotol",
+#            "graduated_drivers_license_law" = "gdl",
+#            "per_se_laws" = "perse",
+#            "total_traffic_fatalities" = "totfat",
+#            "total_nighttime_fatalities" = "nghtfat",
+#            "total_weekend_fatalities" = "wkndfat",
+#            "total_fatalities_per_100_million_miles" = "totfatpvm",	
+#            "nighttime_fatalities_per_100_million_miles" = "nghtfatpvm",
+#            "weekend_fatalities_per_100_million_miles" = "wkndfatpvm",
+#            "nighttime_fatalities_rate" = "nghtfatrte" ,
+#            "weekend_fatalities_rate" = "wkndfatrte",	
+#            "vehicle_miles" = "vehicmiles",	
+#            "unemployment_rate"= "unem",
+#            "pct_population_aged_14_through_24" = "perc14_24",
+#            "vehicle_miles_per_capita" = "vehicmilespc"))
 
 df %>% glimpse
 ```
@@ -225,15 +237,15 @@ df %>%
 df  %>%
   select(-c(state,year,year_of_observation,seatbelt)) %>%
   melt(id.vars=c("total_fatalities_rate")) %>%
-  ggplot(aes(value,total_fatalities_rate,color=variable)) +
+  ggplot(aes(value, total_fatalities_rate ,color=variable)) +
   geom_point(alpha=0.4) +
   geom_smooth(method="lm") +
   facet_wrap(~variable,scales="free_x") +
-  theme_economist_white(gray_bg=F) +
+  # theme_economist_white(gray_bg=F) +
   theme(legend.position="none",axis.text.x=element_text(angle=45,hjust=1,vjust=1,size=8),
         axis.text.y=element_text(size=8)) +
   theme(strip.text=element_text(size=6)) +
-  scale_y_continuous(label=percent) +
+  # scale_y_continuous(label=percent) +
   xlab("year") +
   ylab("Total Fatality Rate")
 ```
@@ -241,7 +253,6 @@ df  %>%
 
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
-
 df %>%
   select(-c(state,year,year_of_observation,seatbelt,total_fatalities_rate))  %>%
   cor() %>%
@@ -280,14 +291,6 @@ mod.lm1 <- lm(total_fatalities_rate ~ factor(year), data=df)
 summary(mod.lm1)
 ```
 
-```{r linear-model-with-some-features}
-# modeling on some positively correlated feature (picked purely by eyes)
-mod.lm2 <- lm(total_fatalities_rate ~ factor(year) + minimum_drinking_age 
-+ vehicle_miles + unemployment_rate
-+ vehicle_miles_per_capita + blood_alcohol_limit
-+ pct_population_aged_14_through_24, data=df)
-summary(mod.lm2)
-```
 
 # (15 points) Expanded Model 
 
@@ -366,13 +369,34 @@ coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 Instead of estimating a fixed effects model, should you have estimated a random effects model?
 
 - Please state the assumptions of a random effects model, and evaluate whether these assumptions are met in the data. 
+
+> Random Effect Model Assumptions:
+- the idiosyncratic error uit should be uncorrelated with each explanatory variable across all time period
+- the error uit are homoskedastic and serially uncorrelated across all time periood
+- the unobservbed effect term ai is independent of all explanatory variables in all the time periods in the model
+
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
+
+```{r random-effect-model estimate}
+re.model <- plm(log(total_fatalities_rate) ~ factor(year)
+              + factor(blood_alcohol_limit)
+              + per_se_laws
+              + seatbelt
+              + speed_limit_70plus
+              + graduated_drivers_license_law
+              + pct_population_aged_14_through_24
+              + log(unemployment_rate)
+              + vehicle_miles_per_capita, 
+                data = df,
+                index = c("state"),
+                model="random")
+
+summary(re.model)
+```
+
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
 
-```{r}
 
-
-```
 
 # (10 points) Model Forecasts 
 
