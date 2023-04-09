@@ -571,7 +571,7 @@ Which set of estimates do you think is more reliable? Why do you think this?
 -**Linearity**: This assumption is met since each of the explanatory variable is shown to have a linear relationship with the response variable.
 -**i.i.d.** : This assumption is met since the cross-sectional variables measured across state/year on a randomized population.
 -**Indentifiability**: In earlier EDA, the selected variables are not perfectly collinear. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme value in the explantory variables. Therefore, this condition is met.
--**Zero conditional means (strict exogeneity)**: TODO: how to test for this one?
+-**Zero conditional means (strict exogeneity)**: Since we're using within estimator to fit a fixed effect model on the state, the effect of unobserved individual heterogeneity is eliminated. Thus this condition is met.
 
 
 ```{r}
