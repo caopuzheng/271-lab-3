@@ -210,7 +210,7 @@ df <- df %>%
   )
 ```
 
-> Looking at the data, we realized the speed_limit is not set for State 27, between 1996 to 2004. Through some background research, this is reflecting the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. We decided to set the speed_limit to 85 for this state and year range, given the legal case of State v. Rudy Stanko (1998) which set the speed limit to 85 mph.
+> Looking at the data, we realized the speed_limit is not set for State 27, between 1996 to 2004. Through some background research, this is reflecting the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. We decided to set the speed_limit to 85 for this state and year range, given the legal case of State v. Rudy Stanko (1998)[link](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction).  which set the speed limit to 75 mph after 1999.
 
 2. (5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
     - How is the our dependent variable of interest `total_fatalities_rate` defined? 
@@ -453,7 +453,7 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 > We can note on R^2.
     
 ```{r simple-linear-model}
-mod.lm1 <- lm(total_fatalities_rate ~ factor(year), data = df)
+mod.lm1 <- lm(total_fatalities_rate ~ year_of_observation, data = df)
 summary(mod.lm1)
 ```
 
@@ -477,7 +477,7 @@ If it is appropriate, include transformations of these variables. Please careful
 
 ```{r}
 mod.lm2 <- lm(
-  log(total_fatalities_rate) ~ factor(year)
+  log(total_fatalities_rate) ~ year_of_observation
     + factor(blood_alcohol_limit)
     + per_se_laws
     + seatbelt
@@ -515,7 +515,7 @@ Which set of estimates do you think is more reliable? Why do you think this?
 ```{r}
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
-  log(total_fatalities_rate) ~ factor(year)
+  log(total_fatalities_rate) ~ year_of_observation
     + factor(blood_alcohol_limit)
     + per_se_laws
     + seatbelt
@@ -548,7 +548,7 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 ```{r random-effect-model estimate}
 # re.model <- plm(
-#   log(total_fatalities_rate) ~ factor(year)
+#   log(total_fatalities_rate) ~ year_of_observation
 #     + factor(blood_alcohol_limit)
 #     + per_se_laws
 #     + seatbelt
