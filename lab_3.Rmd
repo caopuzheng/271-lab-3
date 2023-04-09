@@ -58,9 +58,8 @@ desc
 
 1. (5 points) Load the data and produce useful features. Specifically: 
     - Produce a new variable, called `speed_limit` that re-encodes the data that is in `sl55`, `sl65`, `sl70`, `sl75`, and `slnone`; 
-    #TODO: I just changed slnone to 200, 
     - Produce a new variable, called `year_of_observation` that re-encodes the data that is in `d80`, `d81`, ... , `d04`. 
-    #TODO: this is not what we did? do we care? We just used factor(year)
+    #TODO: Asked Vinod if this is stil necessary, since we didn't do this
     
     - Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series). 
     - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
@@ -115,6 +114,7 @@ df <- df %>%
   select(
     year_of_observation,
     state,
+    year,
     # response variables
     total_fatalities_rate,
     nighttime_fatalities_rate,
@@ -202,7 +202,9 @@ df %>%
 df <- df %>%
   mutate(
     speed_limit = ifelse(
-      is.na(speed_limit) & state == 27, 85, speed_limit
+      is.na(speed_limit) & state == 27, ifelse(
+        year >= 1996 & year <= 1999, 85, 75
+      ), speed_limit
     ),
     speed_limit_70plus = ifelse(
       is.na(speed_limit_70plus) & state == 27, 1, speed_limit_70plus
@@ -210,7 +212,7 @@ df <- df %>%
   )
 ```
 
-> Looking at the data, we realized the speed_limit is not set for State 27, between 1996 to 2004. Through some background research, this is reflecting the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. We decided to set the speed_limit to 85 for this state and year range, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), which lead to the speed limit of 75 mph after 1999.
+> Looking at the data, we realized the speed_limit is not set for State 27, between 1996 to 2004. Through some background research, this is reflecting the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. We decided to set the $speed_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the speed_limit to 75 for Montana between 2000 to 2004.
 
 2. (5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
     - How is the our dependent variable of interest `total_fatalities_rate` defined? 
