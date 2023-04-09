@@ -559,8 +559,20 @@ Re-estimate the **Expanded Model** using fixed effects at the state level.
 
 Which set of estimates do you think is more reliable? Why do you think this? 
 
-- What assumptions are needed in each of these models?  
+- What assumptions are needed in each of these models?
+> Fixed Effect Model Assumptions:
+-**Linearity**: the model is linear in parameters
+-**i.i.d.** : The observations are independent across individuals but not necessarily across time. This is guaranteed by random sampling of individuals.
+-**Indentifiability**: the regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
+-**Zero conditional means (strict exogeneity)**
+
+
 - Are these assumptions reasonable in the current context?
+-**Linearity**: This assumption is met since each of the explanatory variable is shown to have a linear relationship with the response variable.
+-**i.i.d.** : This assumption is met since the cross-sectional variables measured across state/year on a randomized population.
+-**Indentifiability**: In earlier EDA, the selected variables are not perfectly collinear. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme value in the explantory variables. Therefore, this condition is met.
+-**Zero conditional means (strict exogeneity)**: TODO: how to test for this one?
+
 
 ```{r}
 # estimate the fixed effects regression with plm()
