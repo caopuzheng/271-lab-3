@@ -11,6 +11,7 @@ library(lmtest)
 library(stargazer)
 library(tidyverse)
 library(patchwork)
+library(magrittr)
 
 if (!"ggthemes" %in% rownames(installed.packages())) {
   install.packages("ggthemes")
@@ -57,7 +58,9 @@ desc
 
 1. (5 points) Load the data and produce useful features. Specifically: 
     - Produce a new variable, called `speed_limit` that re-encodes the data that is in `sl55`, `sl65`, `sl70`, `sl75`, and `slnone`; 
-    - Produce a new variable, called `year_of_observation` that re-encodes the data that is in `d80`, `d81`, ... , `d04`.
+    #TODO: I just changed slnone to 200, 
+    - Produce a new variable, called `year_of_observation` that re-encodes the data that is in `d80`, `d81`, ... , `d04`. 
+    #TODO: this is not what we did? do we care? We just used factor(year)
     
     - Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series). 
     - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
@@ -85,33 +88,12 @@ df <- data %>%
   ) / 100) %>% # blood_alcohol_limit
   select(-starts_with("bac")) %>%
   mutate(seatbelt = factor(seatbelt)) %>% # 'seatbelt' already categorizes primary or secondary
-  mutate(speed_limit_70plus = ifelse(speed_limit == 55 | speed_limit == 65, 0, 1 | speed_limit == NA)) %>%
+  mutate(speed_limit_70plus = ifelse(speed_limit == 55 | speed_limit == 65, 0, 1)) %>%
   select(-starts_with("sb"))
 
-# This doesn't quite work on the cloud
-# df <- df %>%
-# rename(c("totfatrte" = "total_fatalities_rate",
-#          "minage" = "minimum_drinking_age",
-#          "zerotol" = "zero_tolerance_law",
-#          "gdl" = "graduated_drivers_license_law",
-#          "perse" = "per_se_laws",
-#          "totfat" = "total_traffic_fatalities",
-#          "nghtfat" = "total_nighttime_fatalities",
-#          "wkndfat" = "total_weekend_fatalities",
-#          "totfatpvm" = "total_fatalities_per_100_million_miles",
-#          "nghtfatpvm" = "nighttime_fatalities_per_100_million_miles",
-#          "wkndfatpvm" = "weekend_fatalities_per_100_million_miles",
-#          "nghtfatrte"	= "nighttime_fatalities_rate",
-#          "wkndfatrte" =	"weekend_fatalities_rate",
-#          "vehicmiles"	= "vehicle_miles",
-#          "unem" = "unemployment_rate",
-#          "perc14_24"	= "pct_population_aged_14_through_24",
-#          # "sl70plus" = "speed_limit_70plus",
-#          "vehicmilespc" = "vehicle_miles_per_capita"
-#          ))
 
 df <- df %>%
-  rename(c(
+  dplyr::rename(
     "total_fatalities_rate" = "totfatrte",
     "minimum_drinking_age" = "minage",
     "zero_tolerance_law" = "zerotol",
@@ -129,12 +111,10 @@ df <- df %>%
     "unemployment_rate" = "unem",
     "pct_population_aged_14_through_24" = "perc14_24",
     "vehicle_miles_per_capita" = "vehicmilespc"
-  )) %>%
-  # keep the similar variables together
+  ) %>%
   select(
     year_of_observation,
     state,
-    year,
     # response variables
     total_fatalities_rate,
     nighttime_fatalities_rate,
@@ -160,34 +140,77 @@ df <- df %>%
     statepop,
     unemployment_rate,
     pct_population_aged_14_through_24, vehicle_miles
-  )
+  ) # keep the similar variables together
 
 df %>% glimpse()
 ```
 
 > data %>% filter(sl65>0 & sl65<1) %>% select(sl55,sl65,sl70,sl75,slnone) %>% mutate(sum_sl = sum(sl55,sl65,sl70,sl75,slnone)), we are choosing the max when it's pct 
-> speed_limit_70plus column has values that are not 0 or 1, reclassify based on speed_limit column
 
+> speed_limit_70plus column has values that are not 0 or 1, reclassify based on speed_limit column. Also classify the states with no speed limit as 1 for this variable.
 
-```{r}
-table(df$zero_tolerance_law)
-df %>%
-  filter(zero_tolerance_law != 0 & zero_tolerance_law != 1)
-table(df$graduated_drivers_license_law)
+```{r data-diagnose-and-cleanup}
+df$zero_tolerance_law %>%
+  table(useNA = "ifany") %>%
+  as.data.frame()
 
-df %>%
-  filter(graduated_drivers_license_law != 0 & graduated_drivers_license_law != 1)
+df$graduated_drivers_license_law %>%
+  table(useNA = "ifany") %>%
+  as.data.frame()
 
-table(df$per_se_laws)
+df$per_se_laws %>%
+  table(useNA = "ifany") %>%
+  as.data.frame()
 
-df %>%
-  filter(per_se_laws != 0 & per_se_laws != 1)
-
-# TODO: Fix this
+df <- df %>%
+  mutate(
+    zero_tolerance_law = ifelse(
+      zero_tolerance_law == 0 | zero_tolerance_law == 1, zero_tolerance_law, 1
+    ),
+    graduated_drivers_license_law = ifelse(
+      graduated_drivers_license_law == 0 | graduated_drivers_license_law == 1, graduated_drivers_license_law, 1
+    ),
+    per_se_laws = ifelse(
+      per_se_laws == 0 | per_se_laws == 1, per_se_laws, 1
+    )
+  )
 ```
 
-> There is non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. We will make all values not equal to 0 or 1 to 1 and make it a factor variable
+> We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. But we expect them to be binary given the definition.
 
+> We decided to treat all non-zero values 1 and make it a binary variable.
+
+```{r minimum-drinking-age}
+df$minimum_drinking_age %>%
+  table(useNA = "ifany") %>%
+  as.data.frame()
+
+df <- df %>%
+  mutate(
+    minimum_drinking_age = round(minimum_drinking_age, 0)
+  )
+```
+
+> We noticed that the minimum_drinking_age column has values that are not integers. We decided to round them to the nearest integer.
+
+
+```{r missing-speed-limit}
+df %>%
+  filter(is.na(speed_limit)) %>%
+  select(state, year_of_observation, speed_limit, speed_limit_70plus)
+
+df <- df %>%
+  mutate(
+    speed_limit = ifelse(
+      is.na(speed_limit) & state == 27, 85, speed_limit
+    ),
+    speed_limit_70plus = ifelse(
+      is.na(speed_limit_70plus) & state == 27, 1, speed_limit_70plus
+    )
+  )
+```
+
+> Looking at the data, we realized the speed_limit is not set for State 27, between 1996 to 2004. Through some background research, this is reflecting the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. We decided to set the speed_limit to 85 for this state and year range, given the legal case of State v. Rudy Stanko (1998) which set the speed limit to 85 mph.
 
 2. (5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
     - How is the our dependent variable of interest `total_fatalities_rate` defined? 
@@ -196,7 +219,7 @@ df %>%
     
    > After our data processing work, the clean dataset has 25 columns/fields which include:
     
-    - Index variables: year_of_observation, state, year
+    - Index variables: year_of_observation, state
     - 9 fatality variables: There are three measurements - fatality count, fatality count per 100M miles and fatality rate as defined as count per 100k population. These three measurements are provided for total, nighttime and weekend
     - 10 law and vehicle variables: 8 traffic laws indicators (seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, speed_limit, blood_alcohol_limit) and 2 driving variables (vehicle_miles, vehicle_miles_per_capita)
     - 3 Economics and demographic variables: statepop, unemployment_rate, pct_population_aged_14_through_24
@@ -214,15 +237,15 @@ df %>%
 ```{r}
 # - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset?
 df_avg <- df %>%
-  group_by(year) %>%
+  group_by(year_of_observation) %>%
   summarise(avg_total_fatalities_rate = mean(total_fatalities_rate))
 # average fatality by year
-years <- unique(df$year)
+years <- unique(df$year_of_observation)
 avg_df <- data.frame(year = years, avg_fatality = round(df_avg$avg_total_fatalities_rate, 2))
 
 # plot fatality by year
 df_avg %>%
-  ggplot(aes(year, avg_total_fatalities_rate, label = round(avg_total_fatalities_rate, 2))) +
+  ggplot(aes(year_of_observation, avg_total_fatalities_rate, label = round(avg_total_fatalities_rate, 2))) +
   geom_point() +
   geom_text(hjust = 0, vjust = -0.5) +
   theme_bw() +
@@ -254,7 +277,6 @@ df %>%
 > For the continuous variables, the distributions are right-skewed for most of these variables.
 
 ```{r}
-# TODO: fix seatbelt not showing up, this is a factor with some decimals
 df %>%
   select(
     seatbelt,
@@ -266,88 +288,22 @@ df %>%
     speed_limit,
     blood_alcohol_limit
   ) %>%
-  keep(is.numeric) %>%
   gather() %>%
   ggplot(aes(value)) +
   facet_wrap(~key, scales = "free") +
-  geom_histogram()
-
-
-df %>%
-  select(
-    seatbelt,
-  ) %>%
-  table()
+  geom_bar()
 ```
 
  We observed the following distribution for these categorical variables
  - Blood alcohol limit: Most states have the limit of 0.1.
- - Minimum drinking age: Most states have 21
+ - Minimum drinking age: Most states have 21.
  - Graduated drivers license law, most states have 0
  - Speed limit: Most states have less than 70 miles
  - Per se laws and Zero tolence law are split between 0 and 1
 
-```{r}
-p2 <- df %>%
-  ggplot(aes(x = total_fatalities_rate)) +
-  geom_density(aes(
-    y = ..density..,
-    color = factor(seatbelt), fill = factor(seatbelt)
-  ), alpha = 0.2) +
-  ggtitle("Distribution of total_fatalities_rate by Seatbelt Law") +
-  theme(plot.title = element_text(lineheight = 1, face = "bold")) +
-  xlab("total_fatalities_rate") +
-  ylab("Density")
-
-
-p3 <- df %>%
-  ggplot(aes(total_fatalities_rate, factor(seatbelt))) +
-  geom_boxplot(aes(fill = factor(seatbelt))) +
-  ggtitle("total_fatalities_rate by Seatbelt Law") +
-  theme(plot.title = element_text(lineheight = 1, face = "bold")) +
-  xlab("total_fatalities_rate") +
-  ylab("seatbelt")
-
-p4 <- df %>%
-  ggplot(aes(total_fatalities_rate, factor(speed_limit))) +
-  geom_boxplot(aes(fill = factor(speed_limit))) +
-  ggtitle("total_fatalities_rate by speed_limit") +
-  theme(plot.title = element_text(lineheight = 1, face = "bold")) +
-  xlab("total_fatalities_rate") +
-  ylab("speed_limit")
-
-
-# TODO: this needs to be fixed so no NA shows up
-p5 <- df %>%
-  ggplot(aes(total_fatalities_rate, factor(speed_limit_70plus))) +
-  geom_boxplot(aes(fill = factor(speed_limit_70plus))) +
-  ggtitle("total_fatalities_rate by speed_limit") +
-  theme(plot.title = element_text(lineheight = 1, face = "bold")) +
-  xlab("total_fatalities_rate") +
-  ylab("speed_limit")
-
-# TODO: this need to be fixed so random nums won't show up
-p6 <- df %>%
-  ggplot(aes(total_fatalities_rate, per_se_laws)) +
-  geom_boxplot(aes(fill = factor(per_se_laws)), show.legend = F) +
-  ggtitle("total_fatalities_rate by per_se_laws") +
-  theme(plot.title = element_text(lineheight = 1, face = "bold")) +
-  xlab("total_fatalities_rate") +
-  ylab("per_se_laws")
-
-# p1
-# p2
-p3
-p4
-p5
-p6
-```
-
-> 
-
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
 df %>%
-  ggplot(aes(year, total_fatalities_rate, color = state)) +
+  ggplot(aes(year_of_observation, total_fatalities_rate, color = state)) +
   geom_point(alpha = 0.4) +
   geom_smooth(method = "lm") +
   facet_wrap(~state) +
@@ -364,21 +320,18 @@ df %>%
 
 > Most states have downward trends in total fatalities rate.
 
-```{r pairplot-on-feature-of-interest, fig.height=5, fig.width=6}
+```{r pairplot-on-feature-of-interest-continuous, fig.height=5, fig.width=6}
 df %>%
-  # todo: remove sealbelt once this is fixed
-  # TODO: peg on the continuous vs categorical variables distinction, and only use this for continuous, and do boxplot for categorical
-  select(-c(
-    state, year, year_of_observation, seatbelt,
+  select(
+    total_fatalities_rate,
     nighttime_fatalities_rate,
     weekend_fatalities_rate,
-    total_traffic_fatalities,
-    total_nighttime_fatalities,
-    total_weekend_fatalities,
-    total_fatalities_per_100_million_miles,
-    nighttime_fatalities_per_100_million_miles,
-    weekend_fatalities_per_100_million_miles
-  )) %>% # deselecting index and response variables
+    vehicle_miles,
+    vehicle_miles_per_capita,
+    statepop,
+    unemployment_rate,
+    pct_population_aged_14_through_24
+  ) %>%
   melt(id.vars = c("total_fatalities_rate")) %>%
   ggplot(aes(value, total_fatalities_rate, color = variable)) +
   geom_point(alpha = 0.4) +
@@ -386,36 +339,70 @@ df %>%
   facet_wrap(~variable, scales = "free_x") +
   # theme_economist_white(gray_bg=F) +
   theme(
-    legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
-    axis.text.y = element_text(size = 8)
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    strip.text = element_text(size = 10)
   ) +
-  theme(strip.text = element_text(size = 6)) +
   # scale_y_continuous(label=percent) +
-  xlab("Potential Explanatory Variables") +
+  xlab("Continous Feature vs Total Fatalities Rate") +
+  ylab("Total Fatality Rate")
+```
+
+```{r pairplot-on-feature-of-interest-discrete, fig.height=5, fig.width=6}
+df %>%
+  select(
+    total_fatalities_rate,
+    seatbelt,
+    zero_tolerance_law,
+    graduated_drivers_license_law,
+    per_se_laws,
+    minimum_drinking_age,
+    speed_limit_70plus,
+    speed_limit,
+    blood_alcohol_limit
+  ) %>%
+  melt(id.vars = c("total_fatalities_rate")) %>%
+  ggplot(aes(value, total_fatalities_rate)) +
+  geom_boxplot(aes(fill = factor(value))) +
+  facet_wrap(~variable, scales = "free_x") +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(size = 8),
+    axis.text.y = element_text(size = 8),
+    strip.text = element_text(size = 10)
+  ) +
+  xlab("Discrete Feature vs Total Fatalities Rate") +
   ylab("Total Fatality Rate")
 ```
 
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
-# todo: remove sealbelt once this is fixed
 df %>%
-  select(-c(
-    state, year, year_of_observation, seatbelt,
+  mutate(seatbelt_num = as.numeric(seatbelt)) %>%
+  select(
     total_fatalities_rate,
     nighttime_fatalities_rate,
     weekend_fatalities_rate,
-    total_traffic_fatalities,
-    total_nighttime_fatalities,
-    total_weekend_fatalities,
-    total_fatalities_per_100_million_miles,
-    nighttime_fatalities_per_100_million_miles,
-    weekend_fatalities_per_100_million_miles
-  )) %>%
+    vehicle_miles,
+    statepop,
+    vehicle_miles_per_capita,
+    unemployment_rate,
+    pct_population_aged_14_through_24,
+    seatbelt_num,
+    zero_tolerance_law,
+    graduated_drivers_license_law,
+    per_se_laws,
+    minimum_drinking_age,
+    speed_limit_70plus,
+    speed_limit,
+    blood_alcohol_limit
+  ) %>%
   cor() %>%
   melt() %>%
   ggplot(aes(Var1, Var2, fill = value)) +
   geom_tile() +
-  theme_economist_white(gray_bg = F) +
+  theme_economist_white(gray_bg = FALSE) +
   theme(
     legend.title = element_blank(),
     legend.text = element_text(size = 10),
@@ -429,32 +416,6 @@ df %>%
 
 ```{r transfor the vehical miles per capita to log scale}
 # TODO: transfor the vehical miles per capita to log scale
-df %>%
-  select(-c(
-    state, year, year_of_observation, seatbelt,
-    nighttime_fatalities_rate,
-    weekend_fatalities_rate,
-    total_traffic_fatalities,
-    total_nighttime_fatalities,
-    total_weekend_fatalities,
-    total_fatalities_per_100_million_miles,
-    nighttime_fatalities_per_100_million_miles,
-    weekend_fatalities_per_100_million_miles
-  )) %>% # deselecting index and response variables
-  melt(id.vars = c("total_fatalities_rate")) %>%
-  ggplot(aes(value, total_fatalities_rate, color = variable)) +
-  geom_point(alpha = 0.4) +
-  geom_smooth(method = "lm") +
-  facet_wrap(~variable, scales = "free_x") +
-  # theme_economist_white(gray_bg=F) +
-  theme(
-    legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
-    axis.text.y = element_text(size = 8)
-  ) +
-  theme(strip.text = element_text(size = 6)) +
-  # scale_y_continuous(label=percent) +
-  xlab("Potential Explanatory Variables") +
-  ylab("Total Fatality Rate")
 ```
 
 > The state population and vehicle miles are almost perfectly correlated. So to avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model, which is impacted both of them. 
