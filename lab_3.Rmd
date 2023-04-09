@@ -182,7 +182,7 @@ df <- df %>%
 
 > We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. But we expect them to be binary given the definition.
 
-> We decided to treat all non-zero values 1 and make it a binary variable.
+> We decided to treat all non-zero values as 1 and make it a binary variable.
 
 ```{r minimum-drinking-age}
 df$minimum_drinking_age %>%
@@ -306,12 +306,11 @@ df %>%
   geom_bar()
 ```
 
- We observed the following distribution for these categorical variables
+> We observed the following distribution for these categorical variables
  - Blood alcohol limit: Most states have the limit of 0.1.
  - Minimum drinking age: Most states have 21.
  - Graduated drivers license law, most states have 0
  - Speed limit: Most states have less than 70 miles
- - Per se laws and Zero tolence law are split between 0 and 1
 
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
 # TODO: For Ken: why are there 51 plots, with 48 states?
