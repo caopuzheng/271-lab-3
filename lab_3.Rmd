@@ -86,8 +86,10 @@ df <- data %>%
     )[which.max(c_across(starts_with("bac")))]
   ) / 100) %>% # blood_alcohol_limit
   select(-starts_with("bac")) %>%
-  mutate(seatbelt = factor(seatbelt)) %>% # 'seatbelt' already categorizes primary or secondary
-  mutate(speed_limit_70plus = ifelse(speed_limit == 55 | speed_limit == 65, 0, 1)) %>%
+  mutate(
+    seatbelt = factor(seatbelt), # 'seatbelt' categorizes primary or secondary
+    speed_limit_70plus = ifelse(speed_limit == 55 | speed_limit == 65, 0, 1)
+  ) %>%
   select(-starts_with("sb"))
 
 
@@ -108,7 +110,7 @@ df <- df %>%
     "weekend_fatalities_rate" = "wkndfatrte",
     "vehicle_miles" = "vehicmiles",
     "unemployment_rate" = "unem",
-    "pct_population_aged_14_through_24" = "perc14_24",
+    "pct_population_14_to_24" = "perc14_24",
     "vehicle_miles_per_capita" = "vehicmilespc"
   ) %>%
   select(
@@ -139,7 +141,7 @@ df <- df %>%
     # econ and demographic variables
     statepop,
     unemployment_rate,
-    pct_population_aged_14_through_24, vehicle_miles
+    pct_population_14_to_24, vehicle_miles
   ) # keep the similar variables together
 
 df %>% glimpse()
@@ -168,7 +170,9 @@ df <- df %>%
       zero_tolerance_law == 0 | zero_tolerance_law == 1, zero_tolerance_law, 1
     ),
     graduated_drivers_license_law = ifelse(
-      graduated_drivers_license_law == 0 | graduated_drivers_license_law == 1, graduated_drivers_license_law, 1
+      graduated_drivers_license_law == 0 | graduated_drivers_license_law == 1,
+      graduated_drivers_license_law,
+      1
     ),
     per_se_laws = ifelse(
       per_se_laws == 0 | per_se_laws == 1, per_se_laws, 1
@@ -193,12 +197,12 @@ df <- df %>%
 
 > We noticed that the minimum_drinking_age column has values that are not integers. We decided to round them to the nearest integer.
 
-
 ```{r missing-speed-limit}
 df %>%
   filter(is.na(speed_limit)) %>%
   select(state, year_of_observation, speed_limit, speed_limit_70plus)
 
+# TODO: verifying with Vinod
 df <- df %>%
   mutate(
     speed_limit = ifelse(
@@ -212,7 +216,9 @@ df <- df %>%
   )
 ```
 
-> Looking at the data, we realized the speed_limit is not set for State 27, between 1996 to 2004. Through some background research, this is reflecting the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. We decided to set the $speed_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the speed_limit to 75 for Montana between 2000 to 2004.
+> Looking at the data, we realized the $speed\_limit$ is not set for State 27, between 1996 to 2004. Through some background research, this is reflecting the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. 
+
+> We decided to set the $speed\_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the $speed\_limit$ to 75 for Montana between 2000 to 2004.
 
 2. (5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
     - How is the our dependent variable of interest `total_fatalities_rate` defined? 
@@ -224,30 +230,34 @@ df <- df %>%
     - Index variables: year_of_observation, state
     - 9 fatality variables: There are three measurements - fatality count, fatality count per 100M miles and fatality rate as defined as count per 100k population. These three measurements are provided for total, nighttime and weekend
     - 10 law and vehicle variables: 8 traffic laws indicators (seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, speed_limit, blood_alcohol_limit) and 2 driving variables (vehicle_miles, vehicle_miles_per_capita)
-    - 3 Economics and demographic variables: statepop, unemployment_rate, pct_population_aged_14_through_24
+    - 3 Economics and demographic variables: statepop, unemployment_rate, pct_population_14_to_24
     
   > In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	
 
     
 3. (20 points) Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable `total_fatalities_rate` and the potential explanatory variables. Minimally, this should include: 
-    - How is the our dependent variable of interest `total_fatalities_rate` defined? 
-    
-   > In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	   
-    
-    - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+  - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+  
+  > In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	   
+  
+  - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
 
-```{r}
-# - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset?
+```{r avg-fatality-by-year}
 df_avg <- df %>%
   group_by(year_of_observation) %>%
   summarise(avg_total_fatalities_rate = mean(total_fatalities_rate))
 # average fatality by year
 years <- unique(df$year_of_observation)
-avg_df <- data.frame(year = years, avg_fatality = round(df_avg$avg_total_fatalities_rate, 2))
+avg_df <- data.frame(
+  year = years,
+  avg_fatality = round(df_avg$avg_total_fatalities_rate, 2)
+)
 
 # plot fatality by year
 df_avg %>%
-  ggplot(aes(year_of_observation, avg_total_fatalities_rate, label = round(avg_total_fatalities_rate, 2))) +
+  ggplot(aes(year_of_observation, avg_total_fatalities_rate,
+    label = round(avg_total_fatalities_rate, 2)
+  )) +
   geom_point() +
   geom_text(hjust = 0, vjust = -0.5) +
   theme_bw() +
@@ -264,7 +274,7 @@ df %>%
     vehicle_miles_per_capita,
     statepop,
     unemployment_rate,
-    pct_population_aged_14_through_24
+    pct_population_14_to_24
   ) %>%
   keep(is.numeric) %>%
   gather() %>%
@@ -304,35 +314,49 @@ df %>%
  - Per se laws and Zero tolence law are split between 0 and 1
 
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
+# TODO: For Ken: why are there 51 plots, with 48 states?
 df %>%
-  ggplot(aes(year_of_observation, total_fatalities_rate, color = state)) +
+  ggplot(aes(year, total_fatalities_rate, color = state)) +
   geom_point(alpha = 0.4) +
   geom_smooth(method = "lm") +
   facet_wrap(~state) +
   theme_economist_white(gray_bg = FALSE) +
   theme(
-    legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
-    axis.text.y = element_text(size = 8)
+    legend.position = "none",
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    strip.text = element_text(size = 8)
   ) +
-  theme(strip.text = element_text(size = 4)) +
-  scale_y_continuous(label = percent) +
+  scale_y_continuous() +
   xlab("State") +
-  ylab("Total Fatalities Rate")
+  ylab("Total Fatalities Rate %")
 ```
 
 > Most states have downward trends in total fatalities rate.
 
 ```{r pairplot-on-feature-of-interest-continuous, fig.height=5, fig.width=6}
 df %>%
+  mutate(
+    vehicle_miles_log = log(vehicle_miles),
+    vehicle_miles_per_capita_log = log(vehicle_miles_per_capita),
+    statepop_log = log(statepop),
+    pct_population_14_to_24_log = log(pct_population_14_to_24),
+    unemployment_rate_log = log(unemployment_rate)
+  ) %>%
   select(
     total_fatalities_rate,
     nighttime_fatalities_rate,
     weekend_fatalities_rate,
     vehicle_miles,
+    vehicle_miles_log,
     vehicle_miles_per_capita,
+    vehicle_miles_per_capita_log,
     statepop,
+    statepop_log,
+    pct_population_14_to_24,
+    pct_population_14_to_24_log,
     unemployment_rate,
-    pct_population_aged_14_through_24
+    unemployment_rate_log
   ) %>%
   melt(id.vars = c("total_fatalities_rate")) %>%
   ggplot(aes(value, total_fatalities_rate, color = variable)) +
@@ -344,12 +368,40 @@ df %>%
     legend.position = "none",
     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
     axis.text.y = element_text(size = 8),
-    strip.text = element_text(size = 10)
+    strip.text = element_text(size = 8)
   ) +
   # scale_y_continuous(label=percent) +
   xlab("Continous Feature vs Total Fatalities Rate") +
   ylab("Total Fatality Rate")
 ```
+
+> We conducted log transformation on the following variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. We visualized both the original and log transformed variables, and decided to use log transformation for our interpretation for vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
+
+> Total fatalities rate is positively correlated with unemployment_rate and percentage of population aged 14 through 24.
+
+> Total fatalities rate is negatively correlated with vehicle miles and state population, but positively correlated with vehicle miles per capita. 
+
+> We interpret this as population and vehicle miles are both increasing with time, so is the other driving forces of fatalities rate (quality of the car, technology of the car, road conditions, etc.), so the relationship between total fatalities rate vs vehicle miles and state population is potentially spurious, and thus inconsistent with our background knowlege.
+
+> However, the relationship between total fatalities rate and vehicle miles per capita is positive, because as the density of the population increases, there is expected to be more severe traffic incidents that leads to higher fatalities rate. This is consistent with our background knowledge.
+
+```{r save-log-transformation}
+# TODO: talk about this?
+df <- df %>%
+  mutate(
+    vehicle_miles_log = log(vehicle_miles),
+    vehicle_miles_per_capita_log = log(vehicle_miles_per_capita),
+    statepop_log = log(statepop),
+    unemployment_rate_log = log(unemployment_rate)
+  ) %>%
+  select(
+    -vehicle_miles,
+    -vehicle_miles_per_capita,
+    -statepop,
+    -unemployment_rate
+  )
+```
+
 
 ```{r pairplot-on-feature-of-interest-discrete, fig.height=5, fig.width=6}
 df %>%
@@ -367,12 +419,13 @@ df %>%
   melt(id.vars = c("total_fatalities_rate")) %>%
   ggplot(aes(value, total_fatalities_rate)) +
   geom_boxplot(aes(fill = factor(value))) +
-  facet_wrap(~variable, scales = "free_x") +
+  coord_flip() +
+  facet_wrap(~variable, scales = "free") +
   theme(
     legend.position = "none",
     axis.text.x = element_text(size = 8),
     axis.text.y = element_text(size = 8),
-    strip.text = element_text(size = 10)
+    strip.text = element_text(size = 8)
   ) +
   xlab("Discrete Feature vs Total Fatalities Rate") +
   ylab("Total Fatality Rate")
@@ -381,16 +434,17 @@ df %>%
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
 df %>%
+  # TODO: does this even make sense to calculate corrolation on discrete variables? Don't we need to use a non-pearson correlation?
   mutate(seatbelt_num = as.numeric(seatbelt)) %>%
   select(
     total_fatalities_rate,
     nighttime_fatalities_rate,
     weekend_fatalities_rate,
-    vehicle_miles,
-    statepop,
-    vehicle_miles_per_capita,
-    unemployment_rate,
-    pct_population_aged_14_through_24,
+    vehicle_miles_log,
+    statepop_log,
+    vehicle_miles_per_capita_log,
+    unemployment_rate_log,
+    pct_population_14_to_24,
     seatbelt_num,
     zero_tolerance_law,
     graduated_drivers_license_law,
@@ -416,15 +470,10 @@ df %>%
   )
 ```
 
-```{r transfor the vehical miles per capita to log scale}
-# TODO: transfor the vehical miles per capita to log scale
-```
-
 > The state population and vehicle miles are almost perfectly correlated. So to avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model, which is impacted both of them. 
 
 ### Summary Of EDA
 
-> #TODO: 
 > 1. clean up the dataframe to keep only variables we care;
 > #TODO: as a team, we can write some observations, and rationalize which are the variables we end up using in the next session.
 > 2. transform some variables via log 
@@ -485,9 +534,9 @@ mod.lm2 <- lm(
     + seatbelt
     + speed_limit_70plus
     + graduated_drivers_license_law
-    + pct_population_aged_14_through_24
-    + log(unemployment_rate)
-    + vehicle_miles_per_capita,
+    + pct_population_14_to_24
+    + unemployment_rate_log
+    + vehicle_miles_per_capita_log,
   data = df
 )
 summary(mod.lm2)
@@ -523,9 +572,9 @@ mod.fe <- plm(
     + seatbelt
     + speed_limit_70plus
     + graduated_drivers_license_law
-    + pct_population_aged_14_through_24
-    + log(unemployment_rate)
-    + vehicle_miles_per_capita, ,
+    + pct_population_14_to_24
+    + unemployment_rate_log
+    + vehicle_miles_per_capita_log,
   data = df,
   index = c("state"),
   model = "within"
@@ -556,7 +605,7 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 #     + seatbelt
 #     + speed_limit_70plus
 #     + graduated_drivers_license_law
-#     + pct_population_aged_14_through_24
+#     + pct_population_14_to_24
 #     + log(unemployment_rate)
 #     + vehicle_miles_per_capita,
 #   data = df,
