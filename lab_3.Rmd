@@ -66,7 +66,6 @@ df <- data %>%
   mutate(state = factor(state)) %>%
   rowwise() %>%
   # speed_limit
-  # TODO: what to do with rows where sl55 = 0.542 and sl65 = 0.458?
   mutate(
     speed_limit_70plus = factor(sl70plus),
     speed_limit = parse_number(
@@ -77,21 +76,16 @@ df <- data %>%
     ),
   ) %>%
   select(-starts_with("sl")) %>%
-  # year_of_observation
-  # TODO: This is already in the column called "year". Why do we need this?
-  mutate(year_of_observation = factor(year)) %>%
+  mutate(year_of_observation = factor(year)) %>% # year_of_observation
   select(-starts_with("d")) %>%
-  # blood_alcohol_limit
   mutate(blood_alcohol_limit = parse_number(
     colnames(
       select(data, starts_with("bac"))
     )[which.max(c_across(starts_with("bac")))]
-  ) / 100) %>%
+  ) / 100) %>% # blood_alcohol_limit
   select(-starts_with("bac")) %>%
-  # 'seatbelt' already categorizes primary or secondary
-  mutate(seatbelt = factor(seatbelt)) %>%
-  # speed_limit_70plus column has values that are not 0 or 1, reclassify based on speed_limit column
-  mutate(speed_limit_70plus = ifelse(speed_limit == 55 | speed_limit == 65, 0, 1)) %>%
+  mutate(seatbelt = factor(seatbelt)) %>% # 'seatbelt' already categorizes primary or secondary
+  mutate(speed_limit_70plus = ifelse(speed_limit == 55 | speed_limit == 65, 0, 1 | speed_limit == NA)) %>%
   select(-starts_with("sb"))
 
 # This doesn't quite work on the cloud
@@ -170,23 +164,29 @@ df <- df %>%
 
 df %>% glimpse()
 ```
+
+> data %>% filter(sl65>0 & sl65<1) %>% select(sl55,sl65,sl70,sl75,slnone) %>% mutate(sum_sl = sum(sl55,sl65,sl70,sl75,slnone)), we are choosing the max when it's pct 
+> speed_limit_70plus column has values that are not 0 or 1, reclassify based on speed_limit column
+
+
 ```{r}
 table(df$zero_tolerance_law)
-# TODO:  Should we make all values (39) not equal to 0 or 1 to 1 and make it a factor variable
 df %>%
   filter(zero_tolerance_law != 0 & zero_tolerance_law != 1)
-# TODO:  Should we make all values (20 )  not equal to 0 or 1 to 1 and make it a factor variable
 table(df$graduated_drivers_license_law)
 
 df %>%
   filter(graduated_drivers_license_law != 0 & graduated_drivers_license_law != 1)
 
-# TODO:  Should we make all values (27) not equal to 0 or 1 to 1 and make it a factor variable
 table(df$per_se_laws)
 
 df %>%
   filter(per_se_laws != 0 & per_se_laws != 1)
+
+# TODO: Fix this
 ```
+
+> There is non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. We will make all values not equal to 0 or 1 to 1 and make it a factor variable
 
 
 2. (5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
@@ -210,6 +210,24 @@ df %>%
    > In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	   
     
     - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+
+```{r}
+# - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset?
+df_avg <- df %>%
+  group_by(year) %>%
+  summarise(avg_total_fatalities_rate = mean(total_fatalities_rate))
+# average fatality by year
+years <- unique(df$year)
+avg_df <- data.frame(year = years, avg_fatality = round(df_avg$avg_total_fatalities_rate, 2))
+
+# plot fatality by year
+df_avg %>%
+  ggplot(aes(year, avg_total_fatalities_rate, label = round(avg_total_fatalities_rate, 2))) +
+  geom_point() +
+  geom_text(hjust = 0, vjust = -0.5) +
+  theme_bw() +
+  labs(title = "Average Total Fatalities by Year")
+```
   
 ```{r}
 df %>%
@@ -236,6 +254,7 @@ df %>%
 > For the continuous variables, the distributions are right-skewed for most of these variables.
 
 ```{r}
+# TODO: fix seatbelt not showing up, this is a factor with some decimals
 df %>%
   select(
     seatbelt,
@@ -252,34 +271,21 @@ df %>%
   ggplot(aes(value)) +
   facet_wrap(~key, scales = "free") +
   geom_histogram()
+
+
+df %>%
+  select(
+    seatbelt,
+  ) %>%
+  table()
 ```
 
  We observed the following distribution for these categorical variables
- - Blood alcohol: Most states have the limit of 0.1.
+ - Blood alcohol limit: Most states have the limit of 0.1.
  - Minimum drinking age: Most states have 21
  - Graduated drivers license law, most states have 0
  - Speed limit: Most states have less than 70 miles
  - Per se laws and Zero tolence law are split between 0 and 1
-
-```{r}
-# - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset?
-df_avg <- df %>%
-  group_by(year) %>%
-  summarise(avg_total_fatalities_rate = mean(total_fatalities_rate))
-# average fatality by year
-years <- unique(df$year)
-avg_df <- data.frame(year = years, avg_fatality = round(df_avg$avg_total_fatalities_rate, 2))
-
-# plot fatality by year
-df_avg %>%
-  ggplot(aes(year, avg_total_fatalities_rate, label = round(avg_total_fatalities_rate, 2))) +
-  geom_point() +
-  geom_text(hjust = 0, vjust = -0.5) +
-  theme_bw() +
-  labs(title = "Average Total Fatalities by Year")
-```
-
-
 
 ```{r}
 p2 <- df %>%
@@ -311,6 +317,16 @@ p4 <- df %>%
   ylab("speed_limit")
 
 
+# TODO: this needs to be fixed so no NA shows up
+p5 <- df %>%
+  ggplot(aes(total_fatalities_rate, factor(speed_limit_70plus))) +
+  geom_boxplot(aes(fill = factor(speed_limit_70plus))) +
+  ggtitle("total_fatalities_rate by speed_limit") +
+  theme(plot.title = element_text(lineheight = 1, face = "bold")) +
+  xlab("total_fatalities_rate") +
+  ylab("speed_limit")
+
+# TODO: this need to be fixed so random nums won't show up
 p6 <- df %>%
   ggplot(aes(total_fatalities_rate, per_se_laws)) +
   geom_boxplot(aes(fill = factor(per_se_laws)), show.legend = F) +
@@ -320,11 +336,14 @@ p6 <- df %>%
   ylab("per_se_laws")
 
 # p1
-p2
+# p2
 p3
 p4
+p5
 p6
 ```
+
+> 
 
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
 df %>%
@@ -332,7 +351,7 @@ df %>%
   geom_point(alpha = 0.4) +
   geom_smooth(method = "lm") +
   facet_wrap(~state) +
-  theme_economist_white(gray_bg = F) +
+  theme_economist_white(gray_bg = FALSE) +
   theme(
     legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
     axis.text.y = element_text(size = 8)
@@ -342,9 +361,24 @@ df %>%
   xlab("State") +
   ylab("Total Fatalities Rate")
 ```
+
+> Most states have downward trends in total fatalities rate.
+
 ```{r pairplot-on-feature-of-interest, fig.height=5, fig.width=6}
 df %>%
-  select(-c(state, year, year_of_observation, seatbelt)) %>%
+  # todo: remove sealbelt once this is fixed
+  # TODO: peg on the continuous vs categorical variables distinction, and only use this for continuous, and do boxplot for categorical
+  select(-c(
+    state, year, year_of_observation, seatbelt,
+    nighttime_fatalities_rate,
+    weekend_fatalities_rate,
+    total_traffic_fatalities,
+    total_nighttime_fatalities,
+    total_weekend_fatalities,
+    total_fatalities_per_100_million_miles,
+    nighttime_fatalities_per_100_million_miles,
+    weekend_fatalities_per_100_million_miles
+  )) %>% # deselecting index and response variables
   melt(id.vars = c("total_fatalities_rate")) %>%
   ggplot(aes(value, total_fatalities_rate, color = variable)) +
   geom_point(alpha = 0.4) +
@@ -357,22 +391,34 @@ df %>%
   ) +
   theme(strip.text = element_text(size = 6)) +
   # scale_y_continuous(label=percent) +
-  xlab("year") +
+  xlab("Potential Explanatory Variables") +
   ylab("Total Fatality Rate")
 ```
 
 
-
 ```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
+# todo: remove sealbelt once this is fixed
 df %>%
-  select(-c(state, year, year_of_observation, seatbelt, total_fatalities_rate)) %>%
+  select(-c(
+    state, year, year_of_observation, seatbelt,
+    total_fatalities_rate,
+    nighttime_fatalities_rate,
+    weekend_fatalities_rate,
+    total_traffic_fatalities,
+    total_nighttime_fatalities,
+    total_weekend_fatalities,
+    total_fatalities_per_100_million_miles,
+    nighttime_fatalities_per_100_million_miles,
+    weekend_fatalities_per_100_million_miles
+  )) %>%
   cor() %>%
   melt() %>%
   ggplot(aes(Var1, Var2, fill = value)) +
   geom_tile() +
   theme_economist_white(gray_bg = F) +
   theme(
-    legend.title = element_blank(), legend.text = element_text(size = 10),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 10),
     axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)
   ) +
   scale_fill_gradient2(
@@ -380,6 +426,46 @@ df %>%
     midpoint = 0, limit = c(-1, 1)
   )
 ```
+
+```{r transfor the vehical miles per capita to log scale}
+# TODO: transfor the vehical miles per capita to log scale
+df %>%
+  select(-c(
+    state, year, year_of_observation, seatbelt,
+    nighttime_fatalities_rate,
+    weekend_fatalities_rate,
+    total_traffic_fatalities,
+    total_nighttime_fatalities,
+    total_weekend_fatalities,
+    total_fatalities_per_100_million_miles,
+    nighttime_fatalities_per_100_million_miles,
+    weekend_fatalities_per_100_million_miles
+  )) %>% # deselecting index and response variables
+  melt(id.vars = c("total_fatalities_rate")) %>%
+  ggplot(aes(value, total_fatalities_rate, color = variable)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm") +
+  facet_wrap(~variable, scales = "free_x") +
+  # theme_economist_white(gray_bg=F) +
+  theme(
+    legend.position = "none", axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 8),
+    axis.text.y = element_text(size = 8)
+  ) +
+  theme(strip.text = element_text(size = 6)) +
+  # scale_y_continuous(label=percent) +
+  xlab("Potential Explanatory Variables") +
+  ylab("Total Fatality Rate")
+```
+
+> The state population and vehicle miles are almost perfectly correlated. So to avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model, which is impacted both of them. 
+
+### Summary Of EDA
+
+> #TODO: 
+> 1. clean up the dataframe to keep only variables we care;
+> #TODO: as a team, we can write some observations, and rationalize which are the variables we end up using in the next session.
+> 2. transform some variables via log 
+> #TODO: later in the Expanded Model part: > A log transformation is applied to total_fatalities_rate and unemployment_rate because the skewed distribution needs to be normalized. 
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
 
@@ -392,7 +478,9 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 > Fitting a linear model helps identify significant explanatory variables and evaluate how strong the linear correlation is. 
 
 - What does this model explain, and what do you find in this model? 
-> This model explains whether a given year has a linear correlation with total fatalities rate. Based on the model, there is strong evidence that all the years except 1981 are correlated total fatalities rate at the significance level of 0.
+> This model explains whether a given year has a linear relationship with total fatalities rate. Based on the model, there is strong evidence that all the years except 1981 are related to total fatalities rate at the significance level of 0.
+
+> This makes sense as we are using 1980 as the baseline year, so 1981 is the first year after 1980 and as a result, all the time-variant effects have not kicked in. 
 
 - Did driving become safer over this period? Please provide a detailed explanation.
 > In 1980, the average total fatalities rate was 24% and by 2004, the average total fatalities decreased down to 16%.
@@ -400,6 +488,8 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 - What, if any, are the limitation of this model. In answering this, please consider **at least**: 
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
     - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
+> TODO: let's do this. 
+> We can note on R^2.
     
 ```{r simple-linear-model}
 mod.lm1 <- lm(total_fatalities_rate ~ factor(year), data = df)
@@ -440,6 +530,7 @@ mod.lm2 <- lm(
 summary(mod.lm2)
 ```
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
+> #TODO: add the bac definition.
 
 - Do *per se laws* have a negative effect on the fatality rate? 
 > *per se laws* have a negative effect on the fatality rate, but the variable yielded a p-value > 0.1 thus suggesting that there is weak evidence it is correlated with fatality rate.
@@ -495,22 +586,22 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 
 ```{r random-effect-model estimate}
-re.model <- plm(
-  log(total_fatalities_rate) ~ factor(year)
-    + factor(blood_alcohol_limit)
-    + per_se_laws
-    + seatbelt
-    + speed_limit_70plus
-    + graduated_drivers_license_law
-    + pct_population_aged_14_through_24
-    + log(unemployment_rate)
-    + vehicle_miles_per_capita,
-  data = df,
-  index = c("state"),
-  model = "random"
-)
+# re.model <- plm(
+#   log(total_fatalities_rate) ~ factor(year)
+#     + factor(blood_alcohol_limit)
+#     + per_se_laws
+#     + seatbelt
+#     + speed_limit_70plus
+#     + graduated_drivers_license_law
+#     + pct_population_aged_14_through_24
+#     + log(unemployment_rate)
+#     + vehicle_miles_per_capita,
+#   data = df,
+#   index = c("state"),
+#   model = "random"
+# )
 
-summary(re.model)
+# summary(re.model)
 ```
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
