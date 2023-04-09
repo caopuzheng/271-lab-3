@@ -80,11 +80,11 @@ df <- data %>%
   select(-starts_with("sl")) %>%
   mutate(year_of_observation = factor(year)) %>% # year_of_observation
   select(-starts_with("d")) %>%
-  mutate(blood_alcohol_limit = parse_number(
+  mutate(blood_alcohol_limit = factor(parse_number(
     colnames(
       select(data, starts_with("bac"))
     )[which.max(c_across(starts_with("bac")))]
-  ) / 100) %>% # blood_alcohol_limit
+  ) / 100)) %>% # blood_alcohol_limit
   select(-starts_with("bac")) %>%
   mutate(
     seatbelt = factor(seatbelt), # 'seatbelt' categorizes primary or secondary
@@ -484,9 +484,15 @@ As with every EDA this semester, the goal of this EDA is not to document your ow
 # (15 points) Preliminary Model
 
 Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004 and interpret what you observe. In this section, you should address the following tasks: 
+    
+```{r simple-linear-model}
+mod.lm1 <- lm((total_fatalities_rate) ~ year_of_observation, data = df)
+summary(mod.lm1)
+```
+
 
 - Why is fitting a linear model a sensible starting place? 
-> Fitting a linear model helps identify significant explanatory variables and evaluate how strong the linear correlation is. 
+> Fitting a linear model helps identify significant explanatory variables and evaluate how strong the linear relationship is. 
 
 - What does this model explain, and what do you find in this model? 
 > This model explains whether a given year has a linear relationship with total fatalities rate. Based on the model, there is strong evidence that all the years except 1981 are related to total fatalities rate at the significance level of 0.
@@ -498,15 +504,13 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 
 - What, if any, are the limitation of this model. In answering this, please consider **at least**: 
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
-    - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
-> TODO: let's do this. 
-> We can note on R^2.
     
-```{r simple-linear-model}
-mod.lm1 <- lm(total_fatalities_rate ~ year_of_observation, data = df)
-summary(mod.lm1)
-```
-
+    > The parameter estimates are biased because the model recognizes year as the sole factor affecting total fatalities rate. This introduces omitted variable bias because we have not accounted for other factors such as economic laws and beer taxes that affect fatalities. 
+    
+    - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
+  
+    > TODO: let's do this. Not sure what the difference is between parameter estimates and uncertainty estiamtes. 
+    > We can note on R^2.
 
 # (15 points) Expanded Model 
 
@@ -528,36 +532,44 @@ If it is appropriate, include transformations of these variables. Please careful
 ```{r}
 mod.lm2 <- lm(
   log(total_fatalities_rate) ~ year_of_observation
-    + factor(blood_alcohol_limit)
+    + blood_alcohol_limit
     + per_se_laws
     + seatbelt
     + speed_limit_70plus
     + graduated_drivers_license_law
     + pct_population_14_to_24
-    + unemployment_rate_log
-    + vehicle_miles_per_capita_log,
+    + log(unemployment_rate)
+    + log(vehicle_miles_per_capita),
+    # + unemployment_rate_log
+    # + vehicle_miles_per_capita_log,
   data = df
 )
 summary(mod.lm2)
 ```
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
-> #TODO: add the bac definition.
+> The estimated coefficient on *blood alcohol limit 0.08* is negative and significantly different from zero at 5%. Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease by 0.045924 per 10000 people. 
 
 - Do *per se laws* have a negative effect on the fatality rate? 
-> *per se laws* have a negative effect on the fatality rate, but the variable yielded a p-value > 0.1 thus suggesting that there is weak evidence it is correlated with fatality rate.
+> The estimated coefficient on *per se laws* is negative and not significantly different from zero. Its interpretation is that the presence of the per se laws causes traffic fatalities rate to decrease by 0.013310 per 10000 people. 
 
 - Does having a primary seat belt law?
-> *primary seatbelt laws* also has a negative effect on the fatality rate, but the variable yielded a p-value > 0.1 thus suggesting that there is weak evidence it is correlated with fatality rate.
+> The estimated coefficient on *primary seatbelt laws* is positive and not significantly different from zero. Its interpretation is that the presence primary seatbelt laws causes traffic fatalities rate to increase by 0.001733 per 10000 people. 
 
 # (15 points) State-Level Fixed Effects 
 
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
 - What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
-- What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
-- What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
+> The estimated coefficient on blood alcohol limit 0.08 is negative and not significantly different from zero. Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease by 0.0022167 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and then from significantly different from zero at 5% to not significantly different from zero.
 
-Which set of estimates do you think is more reliable? Why do you think this? 
+- What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
+> The estimated coefficient on *per se laws* is negative and significantly different from zero at 0%. Its interpretation is that the presence of the per se laws causes traffic fatalities rate to decrease by -0.05703 per 10000 people. Compared to the expanded model, the magnitude of the coefficient because larger and more significantly different from zero.
+
+- What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
+> The estimated coefficient on *primary seatbelt laws* is negative and significantly different from zero at 0.1%. Its interpretation is that the presence primary seatbelt laws causes traffic fatalities rate to decrease by 0.0392287 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and from not significantly different from zero to significantly different from zero at 0.1%. 
+
+Which set of estimates do you think is more reliable? Why do you think this?
+> The State-Level Fixed Effects model is more reliable because the sign and magnitude of the estimate changes as we extend the model by entity fixed effects, suggesting that there was some omitted variable bias. Furthermore R^2 increased from 0.6587 to 0.71103 as fixed effects are included in the model equation. 
 
 - What assumptions are needed in each of these models?
 > Fixed Effect Model Assumptions:
@@ -584,13 +596,16 @@ mod.fe <- plm(
     + speed_limit_70plus
     + graduated_drivers_license_law
     + pct_population_14_to_24
-    + unemployment_rate_log
-    + vehicle_miles_per_capita_log,
+    + log(unemployment_rate)
+    + log(vehicle_miles_per_capita),
+    # + unemployment_rate_log
+    # + vehicle_miles_per_capita_log,
   data = df,
   index = c("state"),
   model = "within"
 )
 
+summary(mod.fe)
 # print summary using robust standard errors
 coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 ```
