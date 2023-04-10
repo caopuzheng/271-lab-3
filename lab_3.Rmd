@@ -612,29 +612,32 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - Please state the assumptions of a random effects model, and evaluate whether these assumptions are met in the data. 
 
 > Random Effect Model Assumptions:
-- the idiosyncratic error uit should be uncorrelated with each explanatory variable across all time period
-- the error uit are homoskedastic and serially uncorrelated across all time periood
-- the unobservbed effect term ai is independent of all explanatory variables in all the time periods in the model
+- All assumptions under Fixed Effect model
+- The unobservbed effect term ai is independent of all explanatory variables in all the time periods in the model
 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 
-```{r random-effect-model estimate}
-# re.model <- plm(
-#   log(total_fatalities_rate) ~ year_of_observation
-#     + factor(blood_alcohol_limit)
-#     + per_se_laws
-#     + seatbelt
-#     + speed_limit_70plus
-#     + graduated_drivers_license_law
-#     + pct_population_14_to_24
-#     + log(unemployment_rate)
-#     + vehicle_miles_per_capita,
-#   data = df,
-#   index = c("state"),
-#   model = "random"
-# )
+> The first set of assumption is met under the fixed effect analsysis. To test for the second assumption, we will perform Hausman Test for Fixed vs. Random Effects under the null hypothesis is that the random effects model is acceptable while the alternative hypothesis is there is correlation between residuals and predictors, meaning we should use the fixed effects model. Here, our test resulted in a p-value of 2.649e-7, which is significantly lower than the 95% confidence level, alpha = 0.05. Thus, there are sufficient evidence to reject the Null hypothesis and that the residuals and the predictors are uncorrelated.
+> TODO: interestingly, the coefficients for random effect model isn't too different than the fixed effect model (discuss)
 
-# summary(re.model)
+```{r random-effect-model estimate}
+re.model <- plm(
+    log(total_fatalities_rate) ~ year_of_observation
+    + factor(blood_alcohol_limit)
+    + per_se_laws
+    + seatbelt
+    + speed_limit_70plus
+    + graduated_drivers_license_law
+    + pct_population_14_to_24
+    + log(unemployment_rate)
+    + log(vehicle_miles_per_capita),
+  data = df,
+  index = c("state"),
+  model = "random"
+)
+
+phtest(mod.fe, re.model)
+summary(re.model)
 ```
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
