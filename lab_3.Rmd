@@ -60,8 +60,6 @@ desc
 1. (5 points) Load the data and produce useful features. Specifically: 
     - Produce a new variable, called `speed_limit` that re-encodes the data that is in `sl55`, `sl65`, `sl70`, `sl75`, and `slnone`; 
     - Produce a new variable, called `year_of_observation` that re-encodes the data that is in `d80`, `d81`, ... , `d04`. 
-    #TODO: Asked Vinod if this is stil necessary, since we didn't do this
-    
     - Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series). 
     - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
 ```{r}
@@ -203,7 +201,6 @@ df %>%
   filter(is.na(speed_limit)) %>%
   select(state, year_of_observation, speed_limit, speed_limit_70plus)
 
-# TODO: verifying with Vinod
 df <- df %>%
   mutate(
     speed_limit = ifelse(
