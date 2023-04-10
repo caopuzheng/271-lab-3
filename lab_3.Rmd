@@ -32,6 +32,7 @@ if (!"reshape2" %in% rownames(installed.packages())) {
   install.packages("reshape2")
 }
 library(reshape2)
+library(lubridate)
 ```
 
 
@@ -392,12 +393,6 @@ df <- df %>%
     vehicle_miles_per_capita_log = log(vehicle_miles_per_capita),
     statepop_log = log(statepop),
     unemployment_rate_log = log(unemployment_rate)
-  ) %>%
-  select(
-    -vehicle_miles,
-    -vehicle_miles_per_capita,
-    -statepop,
-    -unemployment_rate
   )
 ```
 
@@ -540,8 +535,8 @@ mod.lm2 <- lm(
     + pct_population_14_to_24
     + log(unemployment_rate)
     + log(vehicle_miles_per_capita),
-    # + unemployment_rate_log
-    # + vehicle_miles_per_capita_log,
+  # + unemployment_rate_log
+  # + vehicle_miles_per_capita_log,
   data = df
 )
 summary(mod.lm2)
@@ -598,8 +593,8 @@ mod.fe <- plm(
     + pct_population_14_to_24
     + log(unemployment_rate)
     + log(vehicle_miles_per_capita),
-    # + unemployment_rate_log
-    # + vehicle_miles_per_capita_log,
+  # + unemployment_rate_log
+  # + vehicle_miles_per_capita_log,
   data = df,
   index = c("state"),
   model = "within"
@@ -654,13 +649,91 @@ The COVID-19 pandemic dramatically changed patterns of driving. Find data (and i
   - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving? 
   - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving? 
   
-> We have collected the United States Motor Vehicle Miles Traveled Total (Millions) data from the US Department of Transformation. This data is available at here [https://www.fhwa.dot.gov/policyinformation/statistics/2021/vm202.cfm]. 
+> We have collected the United States Motor Vehicle Miles Traveled Total (Millions) data from the US Department of Transformation from Jan 1980 to January 2023. This data is available at here [https://www.fhwa.dot.gov/policyinformation/statistics/2021/vm202.cfm]. 
 
 > We have downloaded the data that is compiled by Bloomberg (under ticker: VMTDVCLE Index) and saved it in the file `data/VMTDVCLE.csv`.
 
 ```{r monthly-miles-driven-covid}
+vehicle_miles_month <- read.csv("./data/VMTDVCLE.csv",
+  sep = ",",
+  skip = 5
+) %>%
+  as_tibble() %>%
+  mutate(
+    vehicle_miles = PX_LAST / 1000, # convert to billions
+    Date = as.Date(Date, format = "%m/%d/%Y"),
+    year = year(Date),
+    month = month(Date)
+  ) %>%
+  select(year, month, vehicle_miles)
 
+vehicle_miles_annual <- vehicle_miles_month %>%
+  filter(year < 2023) %>% # remove the 2023 data since it's not complete
+  group_by(year) %>%
+  summarise(total = sum(vehicle_miles))
+
+df_annual <- df %>%
+  group_by(year) %>%
+  summarise(total = sum(vehicle_miles))
+
+# calculate the avg difference between the two data
+
+combined_mile_annual <- vehicle_miles_annual %>%
+  filter(year <= 2004) %>%
+  rename(new = total, new_year = year) %>%
+  cbind(df_annual) %>%
+  mutate(diff = (new - total) / total)
+
+avg_diff <- round(mean(combined_mile_annual$diff) * 100, 1)
+
+
+# visualize the new vs the old vehicle miles data
+ggplot() +
+  geom_line(
+    data = vehicle_miles_annual,
+    aes(x = year, y = total, color = "new data")
+  ) +
+  geom_line(
+    data = df_annual,
+    aes(x = year, y = total, color = "Data from the pa")
+  ) +
+  labs(
+    title = "US Vehicle Miles Traveled (billions)",
+    subtitle = paste0(
+      "Data from Bloomberg vs assignment\nAvg difference by year: ",
+      avg_diff, "%"
+    ),
+    x = "Year",
+    y = "Vehicle Miles Traveled (billions)"
+  )
 ```
+
+> We can see the new vehicle milage data is very similar to the old data, and the new data is always higher than the old data. The average difference between the two data is 0.8%.
+
+> This is expected as the new vehicle miles data from Bloomberg include the entire United States, while the old data only include 48 states.
+
+> But we can believe the new data is a good replacement for the old data in our analysis.
+
+```{r}
+#  - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving?
+# - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving?
+vehicle_miles_month %>%
+  filter(year %in% c(2018, 2020)) %>%
+  group_by(year, month) %>%
+  summarise(
+    vehicle_miles = sum(vehicle_miles)
+  ) %>%
+  ungroup() %>%
+  mutate(
+    vehicle_miles = vehicle_miles / 1000000
+  ) %>%
+  spread(year, vehicle_miles) %>%
+  mutate(
+    pct_change = (2020 - 2018) / 2018
+  ) %>%
+  arrange(month)
+  ```
+
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
