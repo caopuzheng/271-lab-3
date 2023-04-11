@@ -383,7 +383,6 @@ df %>%
 > However, the relationship between total fatalities rate and vehicle miles per capita is positive, because as the density of the population increases, there is expected to be more severe traffic incidents that leads to higher fatalities rate. This is consistent with our background knowledge.
 
 ```{r save-log-transformation}
-# TODO: talk about this?
 df <- df %>%
   mutate(
     vehicle_miles_log = log(vehicle_miles),
@@ -619,7 +618,7 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 ```{r random-effect-model estimate}
 re.model <- plm(
-    log(total_fatalities_rate) ~ year_of_observation
+  log(total_fatalities_rate) ~ year_of_observation
     + factor(blood_alcohol_limit)
     + per_se_laws
     + seatbelt
@@ -691,16 +690,16 @@ avg_diff <- round(mean(combined_mile_annual$diff) * 100, 1)
 ggplot() +
   geom_line(
     data = vehicle_miles_annual,
-    aes(x = year, y = total, color = "new data")
+    aes(x = year, y = total, color = "BBG")
   ) +
   geom_line(
     data = df_annual,
-    aes(x = year, y = total, color = "Data from the pa")
+    aes(x = year, y = total, color = "Assignment")
   ) +
   labs(
     title = "US Vehicle Miles Traveled (billions)",
     subtitle = paste0(
-      "Data from Bloomberg vs assignment\nAvg difference by year: ",
+      "Data from Bloomberg vs the assignment. Avg difference by year is ~",
       avg_diff, "%"
     ),
     x = "Year",
@@ -715,7 +714,7 @@ ggplot() +
 > But we can believe the new data is a good replacement for the old data in our analysis.
 
 ```{r}
-#  - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving?
+# - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving?
 # - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving?
 vehicle_miles_month %>%
   filter(year %in% c(2018, 2020)) %>%
