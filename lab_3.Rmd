@@ -280,8 +280,8 @@ df %>%
   facet_wrap(~key, scales = "free") +
   geom_histogram()
 
-# hist(df$total_fatalities_rate)
-# hist(log(df$total_fatalities_rate))
+# hist(df$pct_population_14_to_24)
+# hist(log(df$pct_population_14_to_24))
 ```
 
 > For the continuous variables, the distributions are right-skewed for most of these variables.
@@ -444,6 +444,7 @@ df %>%
     speed_limit,
     blood_alcohol_limit
   ) %>%
+  mutate_all(as.numeric) %>%
   cor() %>%
   melt() %>%
   ggplot(aes(Var1, Var2, fill = value)) +
@@ -501,10 +502,9 @@ plot(mod.lm1)
     
     > The parameter estimates are biased because the model recognizes year as the sole factor affecting total fatalities rate. This introduces omitted variable bias because we have not accounted for other factors such as economic laws and beer taxes that affect fatalities. 
     
-    - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
-  
-    > TODO: let's do this. Not sure what the difference is between parameter estimates and uncertainty estiamtes. 
-    > We can note on R^2.
+    - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured?
+    
+    > To evaluate uncertainty estimates, we look at the residuals plots below. The residuals vs fitted values form a horizontal band around the residual = 0 line, which means that error terms are equal. However, the residuals are fixed for a certain fitted value, forming vertical lines. The QQ plot is well-behaved except for the head and tail end residuals. This suggests that the uncertainty estimates are biased estimates of sampling based variability because the model residuals are separated by year.
 
 # (15 points) Expanded Model 
 
@@ -521,7 +521,7 @@ Expand the **Preliminary Model** by adding variables related to the following co
 - Vehicle miles driven per capita. 
 
 If it is appropriate, include transformations of these variables. Please carefully explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed.
-> A log transformation is applied to total_fatalities_rate and unemployment_rate because the skewed distribution needs to be normalized. 
+> A log transformation is applied to total_fatalities_rate, unemployment_rate, and vehicle miles per capita because the skewed distribution needs to be normalized. 
 
 ```{r}
 mod.lm2 <- lm(
@@ -532,10 +532,8 @@ mod.lm2 <- lm(
     + speed_limit_70plus
     + graduated_drivers_license_law
     + pct_population_14_to_24
-    + log(unemployment_rate)
-    + log(vehicle_miles_per_capita),
-  # + unemployment_rate_log
-  # + vehicle_miles_per_capita_log,
+  + unemployment_rate_log
+  + vehicle_miles_per_capita_log,
   data = df
 )
 summary(mod.lm2)
@@ -592,10 +590,8 @@ mod.fe <- plm(
     + speed_limit_70plus
     + graduated_drivers_license_law
     + pct_population_14_to_24
-    + log(unemployment_rate)
-    + log(vehicle_miles_per_capita),
-  # + unemployment_rate_log
-  # + vehicle_miles_per_capita_log,
+  + unemployment_rate_log
+  + vehicle_miles_per_capita_log,
   data = df,
   index = c("state"),
   model = "within"
