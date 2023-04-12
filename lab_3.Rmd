@@ -540,7 +540,7 @@ mod.lm2 <- lm(
 )
 summary(mod.lm2)
 par(mfrow=c(2,2))
-plot(mod.lm1)
+plot(mod.lm2)
 ```
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 > The estimated coefficient on *blood alcohol limit 0.08* is negative and significantly different from zero at 5%. Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease by 0.045924 per 10000 people. 
