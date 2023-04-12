@@ -424,8 +424,6 @@ df %>%
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
 df %>%
-  # TODO: does this even make sense to calculate corrolation on discrete variables? Don't we need to use a non-pearson correlation?
-  mutate(seatbelt_num = as.numeric(seatbelt)) %>%
   select(
     total_fatalities_rate,
     nighttime_fatalities_rate,
@@ -434,15 +432,7 @@ df %>%
     statepop_log,
     vehicle_miles_per_capita_log,
     unemployment_rate_log,
-    pct_population_14_to_24,
-    seatbelt_num,
-    zero_tolerance_law,
-    graduated_drivers_license_law,
-    per_se_laws,
-    minimum_drinking_age,
-    speed_limit_70plus,
-    speed_limit,
-    blood_alcohol_limit
+    pct_population_14_to_24
   ) %>%
   cor() %>%
   melt() %>%
@@ -459,6 +449,8 @@ df %>%
     midpoint = 0, limit = c(-1, 1)
   )
 ```
+
+> We decided to not show the correlation matrix for the discrete variables, because the correlation matrix is not a good way to visualize the relationship between discrete variables and continuous variables.
 
 > The state population and vehicle miles are almost perfectly correlated. So to avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model, which is impacted both of them. 
 
@@ -500,8 +492,15 @@ summary(mod.lm1)
     
     - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured? 
   
-    > TODO: let's do this. Not sure what the difference is between parameter estimates and uncertainty estiamtes. 
-    > We can note on R^2.
+    > #TODO: let's do this. Not sure what the difference is between parameter estimates and uncertainty estiamtes. 
+    > We can note on R^2
+    > there is seriel correlation b/c the data is not IID (all from the same state).
+    > beta coefficent is too small. Should use a robust standard error.
+```{r}
+coeftest(mod.lm1, vcov. = vcovHC, type = "HC1")
+forecast::checkresiduals(mod.lm1)
+```
+
 
 # (15 points) Expanded Model 
 
@@ -531,8 +530,6 @@ mod.lm2 <- lm(
     + pct_population_14_to_24
     + log(unemployment_rate)
     + log(vehicle_miles_per_capita),
-  # + unemployment_rate_log
-  # + vehicle_miles_per_capita_log,
   data = df
 )
 summary(mod.lm2)
@@ -547,35 +544,6 @@ summary(mod.lm2)
 > The estimated coefficient on *primary seatbelt laws* is positive and not significantly different from zero. Its interpretation is that the presence primary seatbelt laws causes traffic fatalities rate to increase by 0.001733 per 10000 people. 
 
 # (15 points) State-Level Fixed Effects 
-
-Re-estimate the **Expanded Model** using fixed effects at the state level. 
-
-- What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
-> The estimated coefficient on blood alcohol limit 0.08 is negative and not significantly different from zero. Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease by 0.0022167 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and then from significantly different from zero at 5% to not significantly different from zero.
-
-- What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
-> The estimated coefficient on *per se laws* is negative and significantly different from zero at 0%. Its interpretation is that the presence of the per se laws causes traffic fatalities rate to decrease by -0.05703 per 10000 people. Compared to the expanded model, the magnitude of the coefficient because larger and more significantly different from zero.
-
-- What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
-> The estimated coefficient on *primary seatbelt laws* is negative and significantly different from zero at 0.1%. Its interpretation is that the presence primary seatbelt laws causes traffic fatalities rate to decrease by 0.0392287 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and from not significantly different from zero to significantly different from zero at 0.1%. 
-
-Which set of estimates do you think is more reliable? Why do you think this?
-> The State-Level Fixed Effects model is more reliable because the sign and magnitude of the estimate changes as we extend the model by entity fixed effects, suggesting that there was some omitted variable bias. Furthermore R^2 increased from 0.6587 to 0.71103 as fixed effects are included in the model equation. 
-
-- What assumptions are needed in each of these models?
-> Fixed Effect Model Assumptions:
--**Linearity**: the model is linear in parameters
--**i.i.d.** : The observations are independent across individuals but not necessarily across time. This is guaranteed by random sampling of individuals.
--**Indentifiability**: the regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
--**Zero conditional means (strict exogeneity)**
-
-
-- Are these assumptions reasonable in the current context?
--**Linearity**: This assumption is met since each of the explanatory variable is shown to have a linear relationship with the response variable.
--**i.i.d.** : This assumption is met since the cross-sectional variables measured across state/year on a randomized population.
--**Indentifiability**: In earlier EDA, the selected variables are not perfectly collinear. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme value in the explantory variables. Therefore, this condition is met.
--**Zero conditional means (strict exogeneity)**: Since we're using within estimator to fit a fixed effect model on the state, the effect of unobserved individual heterogeneity is eliminated. Thus this condition is met.
-
 
 ```{r}
 # estimate the fixed effects regression with plm()
@@ -601,6 +569,33 @@ summary(mod.fe)
 coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 ```
 
+Re-estimate the **Expanded Model** using fixed effects at the state level. 
+
+- What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
+> The estimated coefficient on blood alcohol limit 0.08 is negative and not significantly different from zero. Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease by 0.0022167 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and then from significantly different from zero at 5% to not significantly different from zero.
+
+- What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
+> The estimated coefficient on *per se laws* is negative and significantly different from zero at 0%. Its interpretation is that the presence of the per se laws causes traffic fatalities rate to decrease by -0.05703 per 10000 people. Compared to the expanded model, the magnitude of the coefficient because larger and more significantly different from zero.
+
+- What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
+> The estimated coefficient on *primary seatbelt laws* is negative and significantly different from zero at 0.1%. Its interpretation is that the presence primary seatbelt laws causes traffic fatalities rate to decrease by 0.0392287 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and from not significantly different from zero to significantly different from zero at 0.1%. 
+
+Which set of estimates do you think is more reliable? Why do you think this?
+> The State-Level Fixed Effects model is more reliable because the sign and magnitude of the estimate changes as we extend the model by entity fixed effects, suggesting that there was some omitted variable bias. Furthermore R^2 increased from 0.6587 to 0.71103 as fixed effects are included in the model equation. 
+
+- What assumptions are needed in each of these models?
+> Fixed Effect Model Assumptions:
+-**Linearity**: the model is linear in parameters
+-**i.i.d.** : The observations are independent across individuals but not necessarily across time. This is guaranteed by random sampling of individuals.
+-**Indentifiability**: the regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
+-**Zero conditional means (strict exogeneity)**
+
+- Are these assumptions reasonable in the current context?
+-**Linearity**: This assumption is met since each of the explanatory variable is shown to have a linear relationship with the response variable.
+-**i.i.d.** : This assumption is met since the cross-sectional variables measured across state/year on a randomized population.
+-**Indentifiability**: In earlier EDA, the selected variables are not perfectly collinear. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme value in the explantory variables. Therefore, this condition is met.
+-**Zero conditional means (strict exogeneity)**: Since we're using within estimator to fit a fixed effect model on the state, the effect of unobserved individual heterogeneity is eliminated. Thus this condition is met.
+
 # (10 points) Consider a Random Effects Model 
 
 Instead of estimating a fixed effects model, should you have estimated a random effects model?
@@ -614,7 +609,6 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 
 > The first set of assumption is met under the fixed effect analsysis. To test for the second assumption, we will perform Hausman Test for Fixed vs. Random Effects under the null hypothesis is that the random effects model is acceptable while the alternative hypothesis is there is correlation between residuals and predictors, meaning we should use the fixed effects model. Here, our test resulted in a p-value of 2.649e-7, which is significantly lower than the 95% confidence level, alpha = 0.05. Thus, there are sufficient evidence to reject the Null hypothesis and that the residuals and the predictors are uncorrelated.
-> TODO: interestingly, the coefficients for random effect model isn't too different than the fixed effect model (discuss)
 
 ```{r random-effect-model estimate}
 re.model <- plm(
@@ -741,3 +735,7 @@ Now, use these changes in driving to make forecasts from your models.
 # (5 points) Evaluate Error 
 
 If there were serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors? Is there any serial correlation or heteroskedasticity? 
+
+> If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors of the estimators will be biased and underestimated.
+
+> #TODO: test the residuals
