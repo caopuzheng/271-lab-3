@@ -715,8 +715,6 @@ ggplot() +
 > But we can believe the new data is a good replacement for the old data in our analysis.
 
 ```{r monthly-miles-driven-covid-change}
-# - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving?
-# - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving?
 vehicle_miles_month %>%
   filter(year >= 2018 & year < 2023) %>%
   group_by(month) %>%
@@ -736,11 +734,11 @@ Now, use these changes in driving to make forecasts from your models.
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
-> Holding everything else constant, if the number of miles driven per capita increased by 5.0%, the number of traffic fatalities would increase by $5% * \beta = 3.8%$.
+> Holding everything else constant, if the number of miles driven per capita increased by 5.0%, the number of traffic fatalities would increase by $5% * \beta = 3.8%$. Given the fatalities
 
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
-> Holding everything else constant, if the number of miles driven per capita decreased by 39.1%, the number of traffic fatalities would increase by $-39.1% * \beta = -29.5%$. We should be cautious here since the change in independent variable is very large, so the log interpretation might not be accurate.
+> Holding everything else constant, if the number of miles driven per capita decreased by 39.1%, the number of traffic fatalities would increase by $-39.1% * \beta = -29.5%$. We should be cautious here since the change in miles driven per capita is very large, so the log transformation interpretation might not be accurate.
 
 # (5 points) Evaluate Error 
 
