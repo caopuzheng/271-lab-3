@@ -154,7 +154,7 @@ df %>% glimpse()
 df$zero_tolerance_law %>%
   table(useNA = "ifany") %>%
   as.data.frame()
-
+ 
 df$graduated_drivers_license_law %>%
   table(useNA = "ifany") %>%
   as.data.frame()
@@ -439,10 +439,7 @@ df %>%
     zero_tolerance_law,
     graduated_drivers_license_law,
     per_se_laws,
-    minimum_drinking_age,
     speed_limit_70plus,
-    speed_limit,
-    blood_alcohol_limit
   ) %>%
   mutate_all(as.numeric) %>%
   cor() %>%
@@ -469,6 +466,9 @@ df %>%
 > #TODO: as a team, we can write some observations, and rationalize which are the variables we end up using in the next session.
 > 2. transform some variables via log 
 > #TODO: later in the Expanded Model part: > A log transformation is applied to total_fatalities_rate and unemployment_rate because the skewed distribution needs to be normalized. 
+
+> Based on our EDA using the boxplot, we noticed that the variables blood_alcohol_limit, per se laws, seatbelt, speed_limit_70plus, and  graduated_drivers_license_law affected the total_fatalities_rate differently at each different category. For the continous variables, pct_population_14_to_24, the log transformed unemployment_rate, and the log transformed vehicle_miles_per_capita, we noticed that there is a linear relationship between each of these two variables and the total_fatalities_rate. Before modeling, we applied a log transformation is applied to total_fatalities_rate, unemployment_rate, and vehicle_miles_per_capita because the skewed distribution needs to be normalized. 
+
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
 
@@ -615,7 +615,7 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 
 > The first set of assumption is met under the fixed effect analsysis. To test for the second assumption, we will perform Hausman Test for Fixed vs. Random Effects under the null hypothesis is that the random effects model is acceptable while the alternative hypothesis is there is correlation between residuals and predictors, meaning we should use the fixed effects model. Here, our test resulted in a p-value of 2.649e-7, which is significantly lower than the 95% confidence level, alpha = 0.05. Thus, there are sufficient evidence to reject the Null hypothesis and that the residuals and the predictors are uncorrelated.
-> TODO: interestingly, the coefficients for random effect model isn't too different than the fixed effect model (discuss)
+> Once fitted, the random effects models yield a lower set of coefficients compared to the fixed effect model. Most notably, the 1981 category variable coefficient for the random effect model is significantly lower than the fixed effect models. Another interesting observation is that the estimated coefficients for seatbelt1, graduated_drivers_license_law and pct_population_14_to_24 become more significant under the t-test, with p-value < 0.01 compared to the fixed effect model. Overall, the changes in the estimated coefficients and their significant could be attribute to the fact that using the random effect model, we're able to captured the variations in fatality rate across states.
 
 ```{r random-effect-model estimate}
 re.model <- plm(
