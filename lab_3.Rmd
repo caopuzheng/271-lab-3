@@ -435,11 +435,6 @@ df %>%
     vehicle_miles_per_capita_log,
     unemployment_rate_log,
     pct_population_14_to_24,
-    seatbelt_num,
-    zero_tolerance_law,
-    graduated_drivers_license_law,
-    per_se_laws,
-    speed_limit_70plus,
   ) %>%
   mutate_all(as.numeric) %>%
   cor() %>%
@@ -485,6 +480,10 @@ par(mfrow=c(2,2))
 plot(mod.lm1)
 ```
 
+```{r}
+coeftest(mod.lm1, vcov. = vcovHC, type = "HC1")
+forecast::checkresiduals(mod.lm1)
+```
 
 - Why is fitting a linear model a sensible starting place? 
 > Fitting a linear model helps identify significant explanatory variables and evaluate how strong the linear relationship is. 
@@ -551,6 +550,28 @@ plot(mod.lm2)
 
 # (15 points) State-Level Fixed Effects 
 
+
+```{r}
+# estimate the fixed effects regression with plm()
+mod.fe <- plm(
+  log(total_fatalities_rate) ~ year_of_observation
+    + factor(blood_alcohol_limit)
+    + per_se_laws
+    + seatbelt
+    + speed_limit_70plus
+    + graduated_drivers_license_law
+    + pct_population_14_to_24
+  + unemployment_rate_log
+  + vehicle_miles_per_capita_log,
+  data = df,
+  index = c("state"),
+  model = "within"
+)
+
+summary(mod.fe)
+# print summary using robust standard errors
+coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
+```
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
 - What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
@@ -579,28 +600,6 @@ Which set of estimates do you think is more reliable? Why do you think this?
 -**Indentifiability**: In earlier EDA, the selected variables are not perfectly collinear. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme value in the explantory variables. Therefore, this condition is met.
 -**Zero conditional means (strict exogeneity)**: Since we're using within estimator to fit a fixed effect model on the state, the effect of unobserved individual heterogeneity is eliminated. Thus this condition is met.
 
-
-```{r}
-# estimate the fixed effects regression with plm()
-mod.fe <- plm(
-  log(total_fatalities_rate) ~ year_of_observation
-    + factor(blood_alcohol_limit)
-    + per_se_laws
-    + seatbelt
-    + speed_limit_70plus
-    + graduated_drivers_license_law
-    + pct_population_14_to_24
-  + unemployment_rate_log
-  + vehicle_miles_per_capita_log,
-  data = df,
-  index = c("state"),
-  model = "within"
-)
-
-summary(mod.fe)
-# print summary using robust standard errors
-coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
-```
 
 # (10 points) Consider a Random Effects Model 
 
@@ -737,8 +736,13 @@ vehicle_miles_month %>%
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
 # (5 points) Evaluate Error 
 
 If there were serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors? Is there any serial correlation or heteroskedasticity? 
+
+> If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors of the estimators will be biased and underestimated.
+> #TODO: test the residuals
+
