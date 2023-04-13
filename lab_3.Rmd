@@ -309,10 +309,12 @@ df %>%
  - Minimum drinking age: Most states have 21.
  - Graduated drivers license law, most states have 0
  - Speed limit: Most states have less than 70 miles
+ 
 
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
 # TODO: For Ken: why are there 51 plots, with 48 states?
-df %>%
+# we do have 48 states -> missing states 2, 9, and 12. Thus, the ordering is a little bit off
+df %>% 
   ggplot(aes(year, total_fatalities_rate, color = state)) +
   geom_point(alpha = 0.4) +
   geom_smooth(method = "lm") +
@@ -329,7 +331,7 @@ df %>%
   ylab("Total Fatalities Rate %")
 ```
 
-> Most states have downward trends in total fatalities rate.
+> Most states have downward trends in total fatalities rate. Here we notcied that the states are not numerically order sequentially from 1 to 48. Rather, the data is showned to be missin state number 2, 9, and 12. Thus, the numbering of the states is a little confusing in the plot
 
 ```{r pairplot-on-feature-of-interest-continuous, fig.height=5, fig.width=6}
 df %>%
