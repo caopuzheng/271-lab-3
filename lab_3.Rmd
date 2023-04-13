@@ -154,7 +154,7 @@ df %>% glimpse()
 df$zero_tolerance_law %>%
   table(useNA = "ifany") %>%
   as.data.frame()
- 
+
 df$graduated_drivers_license_law %>%
   table(useNA = "ifany") %>%
   as.data.frame()
@@ -424,7 +424,6 @@ df %>%
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
 df %>%
-  # TODO: does this even make sense to calculate corrolation on discrete variables? Don't we need to use a non-pearson correlation?
   mutate(seatbelt_num = as.numeric(seatbelt)) %>%
   select(
     total_fatalities_rate,
@@ -476,7 +475,7 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 mod.lm1 <- lm((total_fatalities_rate) ~ year_of_observation, data = df)
 summary(mod.lm1)
 
-par(mfrow=c(2,2))
+par(mfrow = c(2, 2))
 plot(mod.lm1)
 ```
 
@@ -531,12 +530,12 @@ mod.lm2 <- lm(
     + speed_limit_70plus
     + graduated_drivers_license_law
     + pct_population_14_to_24
-  + unemployment_rate_log
-  + vehicle_miles_per_capita_log,
+    + unemployment_rate_log
+    + vehicle_miles_per_capita_log,
   data = df
 )
 summary(mod.lm2)
-par(mfrow=c(2,2))
+par(mfrow = c(2, 2))
 plot(mod.lm2)
 ```
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
@@ -550,7 +549,6 @@ plot(mod.lm2)
 
 # (15 points) State-Level Fixed Effects 
 
-
 ```{r}
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
@@ -561,8 +559,8 @@ mod.fe <- plm(
     + speed_limit_70plus
     + graduated_drivers_license_law
     + pct_population_14_to_24
-  + unemployment_rate_log
-  + vehicle_miles_per_capita_log,
+    + unemployment_rate_log
+    + vehicle_miles_per_capita_log,
   data = df,
   index = c("state"),
   model = "within"
@@ -664,7 +662,8 @@ vehicle_miles_month <- read.csv("./data/VMTDVCLE.csv",
     year = year(Date),
     month = month(Date)
   ) %>%
-  select(year, month, vehicle_miles)
+  select(year, month, vehicle_miles) %>%
+  arrange(year, month)
 
 vehicle_miles_annual <- vehicle_miles_month %>%
   filter(year < 2023) %>% # remove the 2023 data since it's not complete
@@ -713,31 +712,33 @@ ggplot() +
 
 > But we can believe the new data is a good replacement for the old data in our analysis.
 
-```{r}
+```{r monthly-miles-driven-covid-change}
 # - What month demonstrated the largest decrease in driving? How much, in percentage terms, lower was this driving?
 # - What month demonstrated the largest increase in driving? How much, in percentage terms, higher was this driving?
 vehicle_miles_month %>%
-  filter(year %in% c(2018, 2020)) %>%
-  group_by(year, month) %>%
+  filter(year >= 2018 & year < 2023) %>%
+  group_by(month) %>%
   summarise(
-    vehicle_miles = sum(vehicle_miles)
+    year = year,
+    chg_vs_2018 = round((vehicle_miles / vehicle_miles[year == 2018] - 1) * 100, 1)
+    # vehicle_miles_yoy = round((vehicle_miles / lag(vehicle_miles) - 1) * 100, 1) # yoy
   ) %>%
-  ungroup() %>%
-  mutate(
-    vehicle_miles = vehicle_miles / 1000000
-  ) %>%
-  spread(year, vehicle_miles) %>%
-  mutate(
-    pct_change = (2020 - 2018) / 2018
-  ) %>%
-  arrange(month)
+  filter(year > 2018) %>% # remove the first row
+  spread(year, chg_vs_2018) %>%
+  knitr::kable()
 ```
+
+> The largest decrease in driving during COVID bust is in April 2020 (-39.1% compared with April 2018), and the largest increase in driving post-COVID boom is in September 2022 (+5.0% compared with January 2018), which is technically before COVID.
 
 Now, use these changes in driving to make forecasts from your models. 
 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 
+> Holding everything else constant, if the number of miles driven per capita increased by 5.0%, the number of traffic fatalities would increase by $5% * \beta = 3.8%$.
+
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+
+> Holding everything else constant, if the number of miles driven per capita decreased by 39.1%, the number of traffic fatalities would increase by $-39.1% * \beta = -29.5%$. We should be cautious here since the change in independent variable is very large, so the log interpretation might not be accurate.
 
 # (5 points) Evaluate Error 
 
