@@ -312,9 +312,9 @@ df %>%
  
 
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
-# TODO: For Ken: why are there 51 plots, with 48 states?
-# we do have 48 states -> missing states 2, 9, and 12. Thus, the ordering is a little bit off
-df %>% 
+# we do have 48 states -> missing states 2, 9, and 12.
+# Thus, the ordering is a little bit off
+df %>%
   ggplot(aes(year, total_fatalities_rate, color = state)) +
   geom_point(alpha = 0.4) +
   geom_smooth(method = "lm") +
