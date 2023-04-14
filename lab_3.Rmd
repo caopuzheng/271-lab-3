@@ -5,13 +5,14 @@ output:
   bookdown::pdf_document2: default
 ---
 
-```{r load packages, echo=FALSE, message=FALSE}
+```{r load packages, echo=FALSE, message=FALSE, warning=FALSE}
 library(plm)
 library(lmtest)
 library(stargazer)
 library(tidyverse)
 library(patchwork)
 library(magrittr)
+library(dplyr)
 
 if (!"ggthemes" %in% rownames(installed.packages())) {
   install.packages("ggthemes")
@@ -50,8 +51,9 @@ Specifically, this data set contains data for the 48 continental U.S. states fro
 load(file = "./data/driving.RData")
 
 ## please comment these calls in your work
-glimpse(data)
-desc
+
+# glimpse(data)
+# desc
 ```
 
 
@@ -62,7 +64,9 @@ desc
     - Produce a new variable, called `year_of_observation` that re-encodes the data that is in `d80`, `d81`, ... , `d04`. 
     - Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series). 
     - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
-```{r}
+```{r, warning=FALSE, message=FALSE}
+# produce new variables - year_of_observation, speed_limit, speed_limit_70plus, blood_alcohol_limit
+# 
 df <- data %>%
   mutate(state = factor(state)) %>%
   rowwise() %>%
@@ -91,7 +95,7 @@ df <- data %>%
   ) %>%
   select(-starts_with("sb"))
 
-
+# rename the variables to sensible names
 df <- df %>%
   dplyr::rename(
     "total_fatalities_rate" = "totfatrte",
@@ -143,26 +147,40 @@ df <- df %>%
     pct_population_14_to_24, vehicle_miles
   ) # keep the similar variables together
 
-df %>% glimpse()
+# check the data
+# df %>% glimpse()
 ```
 
-> data %>% filter(sl65>0 & sl65<1) %>% select(sl55,sl65,sl70,sl75,slnone) %>% mutate(sum_sl = sum(sl55,sl65,sl70,sl75,slnone)), we are choosing the max when it's pct 
+```{r echo=FALSE}
+check_sl65 <- data %>% 
+  filter(sl65>0 & sl65<1) %>% 
+  select(sl55,sl65,sl70,sl75,slnone) %>% 
+  mutate(sum_sl = sum(sl55,sl65,sl70,sl75,slnone)) 
+head(check_sl65, 2)
+```
 
-> speed_limit_70plus column has values that are not 0 or 1, reclassify based on speed_limit column. Also classify the states with no speed limit as 1 for this variable.
+> Several notes about our data processing: 
 
-```{r data-diagnose-and-cleanup}
-df$zero_tolerance_law %>%
-  table(useNA = "ifany") %>%
-  as.data.frame()
+> 1) As noted in the above 2 examples, the original dataset has some percentage values in the sl55/sl65/sl70/s75/slone columns. We expect these columnes to be binary (0, 1). In our data processing, we classified the category based on the field with the max value.  For example, we classified the first example as sl55, and the second example as sl70.
 
-df$graduated_drivers_license_law %>%
-  table(useNA = "ifany") %>%
-  as.data.frame()
 
-df$per_se_laws %>%
-  table(useNA = "ifany") %>%
-  as.data.frame()
+> 2) speed_limit_70plus column has values that are not 0 or 1. We reclassified these values to 0 or 1, based on speed_limit column. We als reclassified the states with no speed limit as 1 for this variable at this stage.
 
+```{r data-diagnose-and-cleanup categorical fields}
+# check the values of these fields
+# df$zero_tolerance_law %>%
+#   table(useNA = "ifany") %>%
+#   as.data.frame()
+# 
+# df$graduated_drivers_license_law %>%
+#   table(useNA = "ifany") %>%
+#   as.data.frame()
+# 
+# df$per_se_laws %>%
+#   table(useNA = "ifany") %>%
+#   as.data.frame()
+
+# make binary variables
 df <- df %>%
   mutate(
     zero_tolerance_law = ifelse(
@@ -179,28 +197,33 @@ df <- df %>%
   )
 ```
 
-> We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. But we expect them to be binary given the definition.
-
-> We decided to treat all non-zero values as 1 and make it a binary variable.
+> 3) We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. Since we expect these columns to have binary values (0,1) given the definition, we decided to treat all non-zero values as 1 and make it a binary variable.
 
 ```{r minimum-drinking-age}
-df$minimum_drinking_age %>%
-  table(useNA = "ifany") %>%
-  as.data.frame()
+#check minimum_drinking_age 
+# df$minimum_drinking_age %>%
+#   table(useNA = "ifany") %>%
+#   as.data.frame()
 
 df <- df %>%
   mutate(
     minimum_drinking_age = round(minimum_drinking_age, 0)
   )
+
 ```
 
-> We noticed that the minimum_drinking_age column has values that are not integers. We decided to round them to the nearest integer.
+> 4) We noticed that the minimum_drinking_age column has values that are not integers. We decided to round them to the nearest integer.
 
 ```{r missing-speed-limit}
-df %>%
+
+#check for na speed_limit rows
+check_na_speed <- df %>%
   filter(is.na(speed_limit)) %>%
   select(state, year_of_observation, speed_limit, speed_limit_70plus)
 
+head(check_na_speed,2)
+
+# treat the na speed_limit rows for State 27
 df <- df %>%
   mutate(
     speed_limit = ifelse(
@@ -214,7 +237,7 @@ df <- df %>%
   )
 ```
 
-> Looking at the data, we realized the $speed\_limit$ is not set for State 27, between 1996 to 2004. Through some background research, this is reflecting the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. 
+> 5) We observed that the $speed\_limit$ is not set for State 27, between 1996 to 2004. Our background research noted the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. 
 
 > We decided to set the $speed\_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the $speed\_limit$ to 75 for Montana between 2000 to 2004.
 
@@ -223,9 +246,9 @@ df <- df %>%
     
     > This data set is a balanced longitudinal dataset and contains traffic fatalities data for the 48 continental U.S. states from 1980 through 2004. For each year of observation, the dataset contains state-level cross sectional measurements of fatality count and rate. This data is collected and distributed by Jeffrey M. Wooldridge through this [link](https://github.com/JustinMShea/wooldridge). 
     
-   > After our data processing work, the clean dataset has 25 columns/fields which include:
+   > After our data processing work, the clean dataset (df) has 25 columns/fields which include:
     
-    - Index variables: year_of_observation, state
+    - Index variables: year_of_observation, state, year
     - 9 fatality variables: There are three measurements - fatality count, fatality count per 100M miles and fatality rate as defined as count per 100k population. These three measurements are provided for total, nighttime and weekend
     - 10 law and vehicle variables: 8 traffic laws indicators (seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, speed_limit, blood_alcohol_limit) and 2 driving variables (vehicle_miles, vehicle_miles_per_capita)
     - 3 Economics and demographic variables: statepop, unemployment_rate, pct_population_14_to_24
@@ -239,6 +262,8 @@ df <- df %>%
   > In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	   
   
   - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+  
+  > See below the table
 
 ```{r avg-fatality-by-year}
 df_avg <- df %>%
@@ -248,8 +273,10 @@ df_avg <- df %>%
 years <- unique(df$year_of_observation)
 avg_df <- data.frame(
   year = years,
-  avg_fatality = round(df_avg$avg_total_fatalities_rate, 2)
-)
+  avg_fatality_rate = round(df_avg$avg_total_fatalities_rate, 2)
+) %>%
+  knitr::kable()
+avg_df
 
 # plot fatality by year
 df_avg %>%
@@ -259,10 +286,14 @@ df_avg %>%
   geom_point() +
   geom_text(hjust = 0, vjust = -0.5) +
   theme_bw() +
-  labs(title = "Average Total Fatalities by Year")
+  labs(title = "Average Total Fatalities Rate by Year") +
+  xlab("Year") +
+  ylab("Average Total Fatalities Rate %")
 ```
+
+> Next, check the distribution of the continuous variables  
   
-```{r}
+```{r, warning=FALSE, message=FALSE}
 df %>%
   select(
     total_fatalities_rate,
