@@ -604,19 +604,52 @@ plot(mod.lm2)
 ```
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 
+```{r}
+#coefficient of blood_alcohol_limit0.08
+blood_alcohol_limit0.08_coef = mod.lm2$coefficients[26]
+
+# The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
+# Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
+exp(blood_alcohol_limit0.08_coef) - 1
+
+```
+
 > Every state in the United States has laws making it illegal to operate a motor vehicle while under the influence of alcohol. In each state, the blood alcohol content (BAC) has a legal limit of 0.08% or 0.1% for ordinary, non-commercial vehicles. In this dataset, blood_alcohol_limit variable represents the BAC legal limit for each state, either 0.1 and 0.08. 
 
-> In this model version, blood_alcohol_limit  of 0.1 is the default value for the base model. The estimated coefficient on *blood alcohol limit 0.08* is -0.045924 and significantly different from zero at 5%. The interpretation of this coefficent is that changing the legal blood alcohol limit from 0.10% to 0.08% caused traffic fatalities rate to decrease by 0.04539 per 100,000 people. 
+> In this model version, blood_alcohol_limit  of 0.1 is the default value for the base model. The estimated coefficient on *blood alcohol limit 0.08* is -0.045924 and significantly different from zero at 5%. The interpretation of this coefficent is that changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower. 
 
 
 - Do *per se laws* have a negative effect on the fatality rate? 
 
-> The estimated coefficient on *per se laws* is negative (which aligns with our EDA observation) but not significantly different from zero. Its interpretation is that the presence of the per se laws causes traffic fatalities rate to decrease by 0.013310 per 100,000 people. 
+```{r}
+#coefficient of per_se_laws 
+per_se_laws_coef = mod.lm2$coefficients[27]
+
+# The effect on the total fatalities rate, if per_se_laws from 0 to 1
+# Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
+exp(per_se_laws_coef) - 1
+```
+
+
+> The estimated coefficient on *per se laws* is negative (which aligns with our EDA observation) but not significantly different from zero. Its interpretation is that changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17%, however, this effect is not statistically significant.
 
 - Does having a primary seat belt law?
-> The estimated coefficient on *primary seatbelt laws* (seatbelt1) is negative, which aligns with our EDA observation, but is not significantly different from zero. Its interpretation is that the presence of a primary seatbelt laws causes traffic fatalities rate to decrease by -0.00067 per 100,000 people. 
+
+```{r}
+#coefficient of primary seat belt
+seatbelt1_coef = mod.lm2$coefficients[29]
+
+# The effect on the total fatalities rate, if changing seatbelt law from none to primary
+# Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
+
+exp(seatbelt1_coef) - 1
+```
+
+> The estimated coefficient on *primary seatbelt laws* (seatbelt1) is negative, which aligns with our EDA observation, but is not significantly different from zero. Its interpretation is that changing the seatbelt law from no requirement to primary requirement will cause traffic fatalities rate to decrease marginally (0.067%), not statistically or practically significant. 
 
 # (15 points) State-Level Fixed Effects 
+
+Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
 ```{r}
 # estimate the fixed effects regression with plm()
@@ -639,7 +672,7 @@ summary(mod.fe)
 # print summary using robust standard errors
 coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 ```
-Re-estimate the **Expanded Model** using fixed effects at the state level. 
+
 
 - What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
 > The estimated coefficient on blood alcohol limit 0.08 is negative and not significantly different from zero. Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease by 0.0022167 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and then from significantly different from zero at 5% to not significantly different from zero.
