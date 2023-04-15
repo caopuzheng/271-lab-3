@@ -212,7 +212,7 @@ df <- df %>%
 
 ```
 
-> 4) We noticed that the minimum_drinking_age column has values that are not integers. We decided to round them to the nearest integer.
+> 4) We noticed that the minimum_drinking_age column has values that are not integers. We decided to round these values to the nearest integer.
 
 ```{r missing-speed-limit}
 
@@ -263,7 +263,7 @@ df <- df %>%
   
   - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
   
-  > See below the table
+  > See below the table and the plot.
 
 ```{r avg-fatality-by-year}
 df_avg <- df %>%
@@ -291,7 +291,7 @@ df_avg %>%
   ylab("Average Total Fatalities Rate %")
 ```
 
-> Next, check the distribution of the continuous variables  
+> Next, check the distribution of the continuous variables. We noted that the distributions of the variables are mostly right-skewed.  
   
 ```{r, warning=FALSE, message=FALSE}
 df %>%
@@ -315,7 +315,7 @@ df %>%
 # hist(log(df$pct_population_14_to_24))
 ```
 
-> For the continuous variables, the distributions are right-skewed for most of these variables.
+> We also examined the count distribution of the categorical variables.
 
 ```{r}
 df %>%
@@ -340,7 +340,10 @@ df %>%
  - Minimum drinking age: Most states have 21.
  - Graduated drivers license law, most states have 0
  - Speed limit: Most states have less than 70 miles
+ - per-se_laws, seatbelt and zero_tolence_law are more evenly distributed among the categories
  
+
+> We plotted total_fatalities_rate by state below to understand the trend over the years. 
 
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
 # we do have 48 states -> missing states 2, 9, and 12.
@@ -362,7 +365,7 @@ df %>%
   ylab("Total Fatalities Rate %")
 ```
 
-> Most states have downward trends in total fatalities rate. Here we notcied that the states are not numerically order sequentially from 1 to 48. Rather, the data is showned to be missin state number 2, 9, and 12. Thus, the numbering of the states is a little confusing in the plot
+> Most states have downward trends in total fatalities rate over the years. We noted that the plots are sequentially ordered, except for missing state number 2, 9, and 12. 
 
 ```{r pairplot-on-feature-of-interest-continuous, fig.height=5, fig.width=6}
 df %>%
@@ -405,15 +408,13 @@ df %>%
   ylab("Total Fatality Rate")
 ```
 
-> We conducted log transformation on the following variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. We visualized both the original and log transformed variables, and decided to use log transformation for our interpretation for vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
+> We explored log transformation on several variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. We visualized both the original and log transformed variables. The log transformation seemed to improve the relationship between the explanatory variable and the respond variable (total fatality rate) visually.  Therefore we decided to use log transformation for our interpretation for vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
 
 > Total fatalities rate is positively correlated with unemployment_rate and percentage of population aged 14 through 24.
 
-> Total fatalities rate is negatively correlated with vehicle miles and state population, but positively correlated with vehicle miles per capita. 
+> Total fatalities rate is negatively correlated with vehicle miles and state population which is not intuitive. We interpret this as population and vehicle miles are both increasing with time, so is the other driving forces of fatalities rate (quality of the car, technology of the car, road conditions, etc.), so the relationship between total fatalities rate vs vehicle miles and state population is potentially spurious, and thus inconsistent with our background knowlege.
 
-> We interpret this as population and vehicle miles are both increasing with time, so is the other driving forces of fatalities rate (quality of the car, technology of the car, road conditions, etc.), so the relationship between total fatalities rate vs vehicle miles and state population is potentially spurious, and thus inconsistent with our background knowlege.
-
-> However, the relationship between total fatalities rate and vehicle miles per capita is positive, because as the density of the population increases, there is expected to be more severe traffic incidents that leads to higher fatalities rate. This is consistent with our background knowledge.
+> Total fatalities rate is positively correlated with vehicle miles per capita, as what we expect. As the density of the population increases, there is expected to be more severe traffic incidents that leads to higher fatalities rate. This is consistent with our background knowledge. Therefore, it makes sense to use vehicle miles per capita which is normalized for the population. 
 
 ```{r save-log-transformation}
 df <- df %>%
