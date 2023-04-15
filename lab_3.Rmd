@@ -510,23 +510,25 @@ As with every EDA this semester, the goal of this EDA is not to document your ow
 
 > To summarize our data exploratory work (as detailed in the above plots and comments), we noted the following key takeaways:
 
-- 1) We pre-processed the variables in the original dataset, including creating required new variables, cleaning up categorical variables for consistency and renaming all variables with sensible names. Our final dataset in the df file have 25 variables, including index variables (year/year-of-observations and state), the fatality rates variables and the potential explanatory variables (law, economics and demographic variables).
+- 1) We pre-processed the variables in the original dataset, including creating required new variables, cleaning up categorical variables for consistency and renaming all variables with sensible names. Our final dataset in the df file have 25 variables, including index variables (year/year-of-observations and state), the fatality rates variables and the potential explanatory variables (law, economics and demographic variables). We noted 48 states are included in this dataset, which are number 1-51 except for missing state number 2, 9 and 12.
 
 - 2) We conducted comprehensive data exploratory work by using extensive plots to visualize and examine the distribution of each variable, relationship between the total fatalities rate and the potential explanatory variables (including the log form of several variables), as well as the correlation among the variables. 
 
-- 3) Based on our exploratory work, we observed that stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. We also observed a sensible and positive relationship between total fatalities rate and each of three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). These observations provide important insight and guidance to our subsequent modeling work.
+- 3) Based on our exploratory work, we noted a declining trend of the total fatalities rates for most states over the period.  However, that does not mean time caused the fatalities to go down, based on our experience.  We had two key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). These observations provide important insight and guidance to our subsequent modeling work.
 
 
 # (15 points) Preliminary Model
 
 Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004 and interpret what you observe. In this section, you should address the following tasks: 
+
+> Please see below the linear model summary and residual diagnostic analysis.
     
 ```{r simple-linear-model}
 mod.lm1 <- lm((total_fatalities_rate) ~ year_of_observation, data = df)
 summary(mod.lm1)
 
-par(mfrow = c(2, 2))
-plot(mod.lm1)
+# par(mfrow = c(2, 2))
+# plot(mod.lm1)
 ```
 
 ```{r}
@@ -534,25 +536,30 @@ coeftest(mod.lm1, vcov. = vcovHC, type = "HC1")
 forecast::checkresiduals(mod.lm1)
 ```
 
+
 - Why is fitting a linear model a sensible starting place? 
-> Fitting a linear model helps identify significant explanatory variables and evaluate how strong the linear relationship is. 
+> As a start, fitting a linear model helps identify significant explanatory variables and evaluate how strong the linear relationship is.
 
 - What does this model explain, and what do you find in this model? 
-> This model explains whether a given year has a linear relationship with total fatalities rate. Based on the model, there is strong evidence that all the years except 1981 are related to total fatalities rate at the significance level of 0.
-
-> This makes sense as we are using 1980 as the baseline year, so 1981 is the first year after 1980 and as a result, all the time-variant effects have not kicked in. 
+> Year 1981 is the base value in the linear model. As noted above, we expect the fatalities rate to decline over the years given our EDA observations.  This model shows whether a given year has a linear relationship with total fatalities rate. There is strong statistical evidence that all the years except 1981 are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable, as it is just one year after the base year of 1980 and the declining effect may not be statistically significant. 
 
 - Did driving become safer over this period? Please provide a detailed explanation.
-> In 1980, the average total fatalities rate was 24% and by 2004, the average total fatalities decreased down to 16%.
+> As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time does not necessarily have a causal effect on the fatalities rates. There are many other factors (e.g. law and economics/demographic variables) that could explain the changes in total fatalities rates over the period, as we summarized as the key take-aways in the last part of our EDA section.
 
 - What, if any, are the limitation of this model. In answering this, please consider **at least**: 
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
     
-    > The parameter estimates are biased because the model recognizes year as the sole factor affecting total fatalities rate. This introduces omitted variable bias because we have not accounted for other factors such as economic laws and beer taxes that affect fatalities. 
+    > Based on the residual diagnostic analysis and plots, the residuals are not constant with zero mean expectation. This violates one of the key classical linear model assumptions - linear conditional mean. So the parameter estimates are biased and not reliable.
     
-    - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured?
+    > The parameter estimates are biased because the model recognizes year as the sole explanatory variable for the total fatalities rate.  This introduces omitted variable bias because we have not accounted for other factors such as law, economics and demographic explanatory variables, as we discussed in the EDA section. 
     
-    > To evaluate uncertainty estimates, we look at the residuals plots below. The residuals vs fitted values form a horizontal band around the residual = 0 line, which means that error terms are equal. However, the residuals are fixed for a certain fitted value, forming vertical lines. The QQ plot is well-behaved except for the head and tail end residuals. This suggests that the uncertainty estimates are biased estimates of sampling based variability because the model residuals are separated by year.
+- Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured?
+    
+   > In our residual analysis above, variance is not constant (heteroskedasticity issues). The Breusch-Godfrey test for serial correlation has a p-value much less than 0.05. There is strong evidience of serial correlation in the model residuals. The ACF plot shows significant positive autocorrelation of many lags. With positive serial correlation, the standard errors (uncertain estimate of our parameter coefficients) are understated and the statistical inferences are not reliable.
+   
+   > We pulled heteroskedasticity-robust standard errors using coeftest(mod.lm1, vcov. = vcovHC, type = "HC1") above. The HC errors are higher than the standard error (1.2263) reported in the linear model.  this dataset is structured by state and each state has 25 rows each representing a year. Using this data structure and year as the sole variable, this model has omitted variables bias. 
+   
+
 
 # (15 points) Expanded Model 
 
