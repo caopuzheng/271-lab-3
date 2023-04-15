@@ -538,10 +538,10 @@ forecast::checkresiduals(mod.lm1)
 
 
 - Why is fitting a linear model a sensible starting place? 
-> As a start, fitting a linear model helps identify significant explanatory variables and evaluate how strong the linear relationship is.
+> As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is.
 
 - What does this model explain, and what do you find in this model? 
-> As noted above, we expect the fatalities rate to decline over the years given our EDA observations.  This model shows whether a given year has a linear relationship with total fatalities rate, with Year 1980 as the base value in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable, as it is just one year after the base year of 1980 and the declining effect may not be statistically significant. 
+> As noted above, we expect the fatalities rate to decline over the years given our EDA observations. This model shows whether a given year has a linear relationship with total fatalities rate, with Year 1980 as the base value in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable, as it is just one year after the base year of 1980 and the declining effect may not be statistically significant. 
 
 - Did driving become safer over this period? Please provide a detailed explanation.
 > As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time by itself does not necessarily have a causal effect on the fatalities rates. There are many other factors (e.g. law and economics/demographic variables) that could explain the changes in total fatalities rates over the period, as we summarized as the key take-aways in the last part of our EDA section.
@@ -602,6 +602,13 @@ summary(mod.lm2)
 par(mfrow = c(2, 2))
 plot(mod.lm2)
 ```
+```{r}
+forecast::checkresiduals(mod.lm2)
+```
+
+
+> The model residuals improved over the prelimary linear model version based on the plots. However, the residual mean still has a lot of fluctuations and not around zero. The Normal Q-Q plot is closer to the normal distribution, better than the preliminary linear model. But serial correlation is still a major problem for the model residuals, based on the Breusch-Godfrey test and the ACF plot. Serial correlation makes standard error estimates and statistical inferences not reliable. 
+
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 
 ```{r}
@@ -631,7 +638,9 @@ exp(per_se_laws_coef) - 1
 ```
 
 
-> The estimated coefficient on *per se laws* is negative (which aligns with our EDA observation) but not significantly different from zero. Its interpretation is that changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17%, however, this effect is not statistically significant.
+> The estimated coefficient on *per se laws* is -0.022. The negative coefficient aligns with our EDA observation). However, this coefficient is not significantly different from zero. This is a surprise, as we expect per se laws to have a meaningful impact on the total fatalities rate. 
+
+> Its interpretation is that changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17%, however, this effect is not statistically significant in this model.
 
 - Does having a primary seat belt law?
 
@@ -641,11 +650,12 @@ seatbelt1_coef = mod.lm2$coefficients[29]
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
-
 exp(seatbelt1_coef) - 1
 ```
 
-> The estimated coefficient on *primary seatbelt laws* (seatbelt1) is negative, which aligns with our EDA observation, but is not significantly different from zero. Its interpretation is that changing the seatbelt law from no requirement to primary requirement will cause traffic fatalities rate to decrease marginally (0.067%), not statistically or practically significant. 
+> The estimated coefficient on *primary seatbelt laws* (seatbelt1) is negative (-0.0006714598). The negative sign aligns with our EDA observation, but is not significantly different from zero in this model. This is a surprise, as we expect primary seatbelt law requiremnets to have a material impact on the total fatalities rate. 
+
+> Its interpretation is that changing the seatbelt law from no requirement to primary requirement will cause traffic fatalities rate to decrease marginally (0.067%), not statistically or practically significant. 
 
 # (15 points) State-Level Fixed Effects 
 
@@ -673,32 +683,84 @@ summary(mod.fe)
 coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 ```
 
+```{r}
+#coefficient of blood_alcohol_limit0.08
+blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[25]
+
+# The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
+# Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
+exp(blood_alcohol_limit0.08_coef_fe) - 1
+```
+
 
 - What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
-> The estimated coefficient on blood alcohol limit 0.08 is negative and not significantly different from zero. Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease by 0.0022167 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and then from significantly different from zero at 5% to not significantly different from zero.
+> In this State-level fixed effects model, the estimated coefficient on blood alcohol limit 0.08 is -0.0048883, much less negative than the estimated coefficient of -0.045924 in the expanded linear model (mod.lm2). 
+
+> Additionally, the expanded linear model (mod.lm2) showed that this variable is statistically significant, but the State-level fixed effects model shows taht this variable's coefficient is not significantly different from zero. 
+
+> Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease marginally by 0.49%, which is not significant from statistical and practical perspectives. 
 
 - What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
-> The estimated coefficient on *per se laws* is negative and significantly different from zero at 0%. Its interpretation is that the presence of the per se laws causes traffic fatalities rate to decrease by -0.05703 per 10000 people. Compared to the expanded model, the magnitude of the coefficient because larger and more significantly different from zero.
+
+```{r}
+#coefficient of per_se_laws 
+per_se_laws_coef_fe = mod.fe$coefficients[26]
+
+# The effect on the total fatalities rate, if per_se_laws from 0 to 1
+# Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
+exp(per_se_laws_coef_fe) - 1
+```
+
+> The estimated coefficient on *per se laws* is -0.0554823 and significantly different from zero at 0%. In the prior expanded linear model (mod.lm2), this variable has a coefficient of -0.022 and was not statistically significant.
+
+> Its interpretation is that change per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 5.4%. This is significant both statistically and practically. Compared to the expanded model, the impact magnitude of per se laws estimated by the fixed effects model is much larger and is sensible.
 
 - What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
-> The estimated coefficient on *primary seatbelt laws* is negative and significantly different from zero at 0.1%. Its interpretation is that the presence primary seatbelt laws causes traffic fatalities rate to decrease by 0.0392287 per 10000 people. Compared to the expanded model, the coefficient changed from positive to negative and from not significantly different from zero to significantly different from zero at 0.1%. 
+
+```{r}
+#coefficient of primary seat belt
+seatbelt1_coef_fe = mod.fe$coefficients[28]
+
+# The effect on the total fatalities rate, if changing seatbelt law from none to primary
+# Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
+exp(seatbelt1_coef_fe) - 1
+```
+
+> The estimated coefficient on *primary seatbelt laws* is -0.041 and has strong evidence that it is difference from zero at 0.1%. The prior expanded model (mod.lm2) noted that this variable was not statistically significant, which was not aligned with our experience.
+
+> Its interpretation is that chaning seatbelt law requirement from none to primary will cause traffic fatalities rate to decrease by 4.1%, which is significant both statistically and practically. This effect makes much sense than the effect estimated by the expanded model. 
 
 Which set of estimates do you think is more reliable? Why do you think this?
-> The State-Level Fixed Effects model is more reliable because the sign and magnitude of the estimate changes as we extend the model by entity fixed effects, suggesting that there was some omitted variable bias. Furthermore R^2 increased from 0.6587 to 0.71103 as fixed effects are included in the model equation. 
+
+```{r, warning=FALSE}
+forecast::checkresiduals(mod.fe)
+```
+
+
+> For the State-level Fixed Effect models, as we extend the model to include the entire fixed effects, it mitigated the omitted variable bias issues and improved the model performance over the linear model versions.
+
+> The model residuals have a conditional mean around zero, with a normal distribution. Since this model uses the within setting to fit a fixed effect model at the state level, the effect of unobserved individual heterogeneity is eliminated. The conditinoal mean of zero assumption is met. 
+
+> Variance fluctulations are much improved compared to the expanded model. The ACF plot shows autocorrelation for the first few lags but decays quickly. This is much better than the ACF plot of the expanded model. As noted in the expanded model residuals analysis, there was signicant and slow decaying serial correlation in the residuals which makes the expanded model's standard errors and statistical inferences not reliable.  
+
+> Based on the residuals analysis, the State-level Fixed Effects model will generate more reliable estimates. R2 increased from 0.67 to 0.73, as fixed effects are included in the model equation. 
+
+> Also, the parameter estimates' sign and magnitude in the Fixed Effects model make much sense than the expanded model, based on our EDA work and our experience. 
 
 - What assumptions are needed in each of these models?
+
 > Fixed Effect Model Assumptions:
 -**Linearity**: the model is linear in parameters
--**i.i.d.** : The observations are independent across individuals but not necessarily across time. This is guaranteed by random sampling of individuals.
--**Indentifiability**: the regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.
--**Zero conditional means (strict exogeneity)**
+-**i.i.d.** : The observations are independent across individual states but not necessarily across time. This is guaranteed through random sampling.
+-**Indentifiability**: the regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values.  
+-**Zero conditional means (strict exogeneity)**  
 
 
 - Are these assumptions reasonable in the current context?
--**Linearity**: This assumption is met since each of the explanatory variable is shown to have a linear relationship with the response variable.
--**i.i.d.** : This assumption is met since the cross-sectional variables measured across state/year on a randomized population.
--**Indentifiability**: In earlier EDA, the selected variables are not perfectly collinear. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme value in the explantory variables. Therefore, this condition is met.
--**Zero conditional means (strict exogeneity)**: Since we're using within estimator to fit a fixed effect model on the state, the effect of unobserved individual heterogeneity is eliminated. Thus this condition is met.
+-**Linearity**: This assumption is met since each of the explanatory variable is shown to have a linear relationship with the response variable in the models.
+-**i.i.d.** : This assumption is met since the cross-sectional variables measured across state/year on a randomized population. Since we have 48 different states, we assume that each state has independent legislative procedures and has the state-specific economics and demographic situations. 
+-**Indentifiability**: In our EDA work, we excluded the variables that have perfect collinearity. Also any variables with perfect collinearity would be dropped out from the model. So this condition is met. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme values in the explanatory variables. Therefore, this condition is met.
+-**Zero conditional means (strict exogeneity)**: Since we're using within estimator to fit a fixed effect model on the state, the effect of unobserved individual heterogeneity is eliminated. Thus this condition is met by the State-level Fixed Effect Model. This condition is not met by the two linear models.
 
 
 # (10 points) Consider a Random Effects Model 
