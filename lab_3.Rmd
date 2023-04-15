@@ -163,7 +163,6 @@ head(check_sl65, 2)
 
 > 1) As noted in the above 2 examples, the original dataset has some percentage values in the sl55/sl65/sl70/s75/slone columns. We expect these columnes to be binary (0, 1). In our data processing, we classified the category based on the field with the max value.  For example, we classified the first example as sl55, and the second example as sl70.
 
-
 > 2) speed_limit_70plus column has values that are not 0 or 1. We reclassified these values to 0 or 1, based on speed_limit column. We als reclassified the states with no speed limit as 1 for this variable at this stage.
 
 ```{r data-diagnose-and-cleanup categorical fields}
@@ -193,11 +192,14 @@ df <- df %>%
     ),
     per_se_laws = ifelse(
       per_se_laws == 0 | per_se_laws == 1, per_se_laws, 1
-    )
+    ),
+    blood_alcohol_limit_binary = ifelse(
+      blood_alcohol_limit == 0.1, 1, 0
+    )  # set 1 for 0.1 blood_alcohol_limit and 0 for 0.08 blood_alcohol_limit 
   )
 ```
 
-> 3) We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. Since we expect these columns to have binary values (0,1) given the definition, we decided to treat all non-zero values as 1 and make it a binary variable.
+> 3) We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. Since we expect these columns to have binary values (0,1) given the definition, we decided to treat all non-zero values as 1 and make it a binary variable.  We also created a binary variable blood_alcohol_limit_binary to set 1 for 0.1 blood_alcohol_limit and 0 for 0.08 blood_alcohol_limit, as there are only two values (0.1 and 0.08) for this variable.
 
 ```{r minimum-drinking-age}
 #check minimum_drinking_age 
@@ -427,7 +429,21 @@ df <- df %>%
 ```
 
 
-```{r pairplot-on-feature-of-interest-discrete, fig.height=5, fig.width=6}
+```{r}
+unique(df$speed_limit)
+```
+
+> We used boxplots to visually examine the differences in total fatalities rate for the groups within each law categorical variable. We observed that stricter law requirements tend to associate with lower total fatalities rate, see below the detailed comments for each law variable.
+
+- Seatbelt: No seatbelt requirements tend to have higher fatalities rate, in comparison to having primary and secondary seatbelt requirements. 
+- For zero_tolerance_law,graduated_drivers_license_law and per_se_laws: 0 (stricter laws) tends to have lower fatalities rate, in comparison to having some level of flexibility/tolerance in law requirements. 
+- minimum_drinking_age: higher legally-eligible age tends to have lower fatalities rate, in comparison to lowering the age legal requirement
+- speed_limit_70plus: below 70 speed limit tends to have lower fatalities rate, in comparison to allowing 70+ speed limit 
+- blood_alcohol_limit: 0.08 blood alcohol limit tends to have have lower fatalities rate, in comparison to 0.1 blood alcohol limit
+
+
+
+```{r pairplot-on-feature-of-interest-discrete, fig.height=5, fig.width=6, warning=FALSE}
 df %>%
   select(
     total_fatalities_rate,
@@ -451,10 +467,11 @@ df %>%
     axis.text.y = element_text(size = 8),
     strip.text = element_text(size = 8)
   ) +
-  xlab("Discrete Feature vs Total Fatalities Rate") +
+  xlab("Groups for Each Categorical Variables ") +
   ylab("Total Fatality Rate")
 ```
 
+> We examined the correlation matrix of the continuously variables, so we can eliminate including the explanatory variables with perfect correlation with each other. 
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
 df %>%
@@ -486,19 +503,18 @@ df %>%
   )
 ```
 
-> The state population and vehicle miles are almost perfectly correlated. So to avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model, which is impacted both of them. 
-
-### Summary Of EDA
-
-> 1. clean up the dataframe to keep only variables we care;
-> #TODO: as a team, we can write some observations, and rationalize which are the variables we end up using in the next session.
-> 2. transform some variables via log 
-> #TODO: later in the Expanded Model part: > A log transformation is applied to total_fatalities_rate and unemployment_rate because the skewed distribution needs to be normalized. 
-
-> Based on our EDA using the boxplot, we noticed that the variables blood_alcohol_limit, per se laws, seatbelt, speed_limit_70plus, and  graduated_drivers_license_law affected the total_fatalities_rate differently at each different category. For the continous variables, pct_population_14_to_24, the log transformed unemployment_rate, and the log transformed vehicle_miles_per_capita, we noticed that there is a linear relationship between each of these two variables and the total_fatalities_rate. Before modeling, we applied a log transformation is applied to total_fatalities_rate, unemployment_rate, and vehicle_miles_per_capita because the skewed distribution needs to be normalized. 
+> The state population and vehicle miles are almost perfectly correlated. To avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model development. In our exploratory work above, we also noted that state population and vehicle miles seem to have spurious relationship with total fatalities rate, so it makes sense to exclude them in the model.  
 
 
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
+
+> To summarize our data exploratory work (as detailed in the above plots and comments), we noted the following key takeaways:
+
+- 1) We pre-processed the variables in the original dataset, including creating required new variables, cleaning up categorical variables for consistency and renaming all variables with sensible names. Our final dataset in the df file have 25 variables, including index variables (year/year-of-observations and state), the fatality rates variables and the potential explanatory variables (law, economics and demographic variables).
+
+- 2) We conducted comprehensive data exploratory work by using extensive plots to visualize and examine the distribution of each variable, relationship between the total fatalities rate and the potential explanatory variables (including the log form of several variables), as well as the correlation among the variables. 
+
+- 3) Based on our exploratory work, we observed that stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. We also observed a sensible and positive relationship between total fatalities rate and each of three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). These observations provide important insight and guidance to our subsequent modeling work.
 
 
 # (15 points) Preliminary Model
