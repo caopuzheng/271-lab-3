@@ -605,11 +605,11 @@ If it is appropriate, include transformations of these variables. Please careful
 ```{r}
 mod.lm2 <- lm(
   log(total_fatalities_rate) ~ year_of_observation
-    + blood_alcohol_limit
-    + per_se_laws
-    + seatbelt
-    + speed_limit_70plus
-    + graduated_drivers_license_law
+    + factor(blood_alcohol_limit)
+    + factor(per_se_laws)
+    + factor(seatbelt)
+    + factor(speed_limit_70plus)
+    + factor(graduated_drivers_license_law)
     + pct_population_14_to_24
     + unemployment_rate_log
     + vehicle_miles_per_capita_log,
@@ -679,20 +679,20 @@ exp(seatbelt1_coef) - 1
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
 ```{r}
-df <- plm.data(df, indexes = c('year','state'))
+df <- pdata.frame(df, index = c('year_of_observation','state'))
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
-  log(total_fatalities_rate) ~ year_of_observation
-    + factor(blood_alcohol_limit)
-    + per_se_laws
-    + seatbelt
-    + speed_limit_70plus
-    + graduated_drivers_license_law
+  log(total_fatalities_rate) ~ 
+    factor(blood_alcohol_limit)
+    + factor(per_se_laws)
+    + factor(seatbelt)
+    + factor(speed_limit_70plus)
+    + factor(graduated_drivers_license_law)
     + pct_population_14_to_24
     + unemployment_rate_log
     + vehicle_miles_per_capita_log,
   data = df,
-  index = c("state"),
+  index = c("state", "year_of_observation"),
   model = "within"
 )
 
@@ -703,7 +703,9 @@ coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 
 ```{r}
 #coefficient of blood_alcohol_limit0.08
-blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[25]
+#blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[25]
+blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[1]
+
 
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
@@ -722,7 +724,8 @@ exp(blood_alcohol_limit0.08_coef_fe) - 1
 
 ```{r}
 #coefficient of per_se_laws 
-per_se_laws_coef_fe = mod.fe$coefficients[26]
+# per_se_laws_coef_fe = mod.fe$coefficients[26]
+per_se_laws_coef_fe = mod.fe$coefficients[2]
 
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
@@ -737,7 +740,8 @@ exp(per_se_laws_coef_fe) - 1
 
 ```{r}
 #coefficient of primary seat belt
-seatbelt1_coef_fe = mod.fe$coefficients[28]
+# seatbelt1_coef_fe = mod.fe$coefficients[28]
+seatbelt1_coef_fe = mod.fe$coefficients[4]
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
@@ -803,17 +807,16 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 ```{r random-effect-model estimate}
 re.model <- plm(
-  log(total_fatalities_rate) ~ year_of_observation
-    + factor(blood_alcohol_limit)
-    + per_se_laws
-    + seatbelt
-    + speed_limit_70plus
-    + graduated_drivers_license_law
+  log(total_fatalities_rate) ~ factor(blood_alcohol_limit)
+    + factor(per_se_laws)
+    + factor(seatbelt)
+    + factor(speed_limit_70plus)
+    + factor(graduated_drivers_license_law)
     + pct_population_14_to_24
     + unemployment_rate_log
     + vehicle_miles_per_capita_log,
   data = df,
-  index = c("state"),
+  index = c("state", "year_of_observation"),
   model = "random"
 )
 
@@ -961,5 +964,13 @@ Now, use these changes in driving to make forecasts from your models.
 
 If there were serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors? Is there any serial correlation or heteroskedasticity? 
 
-> If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors of the estimators will be biased and underestimated. In our cases, both the fixed effects and random effects models showed a normally distributed residuals, leading us to conclude that there are no serial correlation or heteroskedasticity.
+```{r heteroskedasticity-test}
+pcdtest(mod.fe, test = "lm")
+```
+
+```{r serial-correlation-test}
+pbgtest(mod.fe, order = 2)
+```
+
+> If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors of the estimators will be biased and underestimated. In our cases, when we apply the Breusch Pagan Test on homoskedasticity, we obtained a p-value of 2.2e-16, which is significantly less than 0.05, suggesting that there is sign of heteroskedasticity from the idiosyncratic error. Performing the Breusch-Godfrey test, we obtain a p-value of 0.9791, which is significantly more than 0.05, suggesting that we have do not have serially correlation in idiosyncratic errors. 
 
