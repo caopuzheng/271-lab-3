@@ -33,6 +33,23 @@ if (!"reshape2" %in% rownames(installed.packages())) {
   install.packages("reshape2")
 }
 library(reshape2)
+
+
+if(!"ggplot2"%in%rownames(installed.packages())) {install.packages("ggplot2")}
+library(ggplot2)
+
+if(!"gridExtra"%in%rownames(installed.packages())) {install.packages("gridExtra")}
+library(gridExtra)
+
+if(!"tibble"%in%rownames(installed.packages())) {install.packages("tibble")}
+library(tibble)
+
+if(!"lme4"%in%rownames(installed.packages())) {install.packages("lme4")}
+library(lme4)
+
+if(!"stargazer"%in%rownames(installed.packages())) {install.packages("stargazer")}
+library(stargazer)
+
 library(lubridate)
 ```
 
@@ -792,8 +809,8 @@ re.model <- plm(
     + speed_limit_70plus
     + graduated_drivers_license_law
     + pct_population_14_to_24
-    + log(unemployment_rate)
-    + log(vehicle_miles_per_capita),
+    + unemployment_rate_log
+    + vehicle_miles_per_capita_log,
   data = df,
   index = c("state"),
   model = "random"
@@ -802,6 +819,7 @@ re.model <- plm(
 phtest(mod.fe, re.model)
 summary(re.model)
 ```
+
 ```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
 
 # While we don't think it is appropriate to use the random effect model, for information only, we included the random effect model in the comparison for information
@@ -824,11 +842,16 @@ stargazer(mod.lm2, mod.fe, re.model,
           column.labels = c("expand model", "Fixed Effects","Random Effects"))
 ```
 
-
-
 ```{r, warning=FALSE, include=FALSE, echo=FALSE}
 forecast::checkresiduals(re.model)
 ```
+
+```{r check random effects}
+re <- data.frame(ranef(re.model))
+re[c(1:10)]
+```
+
+
 
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
