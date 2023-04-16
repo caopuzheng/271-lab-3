@@ -284,7 +284,7 @@ df <- df %>%
   
   > See below the table and the plot.
 
-```{r avg-fatality-by-year}
+```{r avg-fatality-by-year, warning=FALSE}
 df_avg <- df %>%
   group_by(year_of_observation) %>%
   summarise(avg_total_fatalities_rate = mean(total_fatalities_rate))
@@ -336,7 +336,7 @@ df %>%
 
 > We also examined the count distribution of the categorical variables.
 
-```{r}
+```{r, warning=FALSE}
 df %>%
   select(
     seatbelt,
@@ -361,8 +361,31 @@ df %>%
  - Speed limit: Most states have less than 70 miles
  - per-se_laws, seatbelt and zero_tolence_law are more evenly distributed among the categories
  
+ 
+> We plotted total_fatalities_rate by state below to understand the fixed effects by state 
 
-> We plotted total_fatalities_rate by state below to understand the trend over the years. 
+```{r}
+df
+```
+
+
+```{r}
+df %>%
+  ggplot(aes(reorder(state, desc(total_fatalities_rate)),total_fatalities_rate,
+             fill=state)) +
+  geom_boxplot(alpha=0.4) +
+  theme_economist_white(gray_bg=F) +
+  theme(legend.position="none",axis.text.y=element_text(size=6)) +
+  scale_y_continuous(label=percent) +
+  xlab("State") +
+  ylab("Total Fatalities Rate%") +
+  coord_flip()
+```
+
+> We see strong differences in total traffic fatalities rates across states, suggesting that fixed effects are important for controlling for unobserved differences.
+
+
+> We also plotted total_fatalities_rate by state below to understand the trend over the years. 
 
 ```{r cross-sectional-plot, fig.height=6, fig.width=8}
 # we do have 48 states -> missing states 2, 9, and 12.
@@ -616,17 +639,35 @@ mod.lm2 <- lm(
     + unemployment_rate_log
     + vehicle_miles_per_capita_log,
   data = df
+
 )
 summary(mod.lm2)
+
+
+```
+> Looking at the coefficients estimates, all the years coefficients are negative, which aligns with our EDA observations. However, some of the coefficients have unintuitive signs and not aligned with our EDA work and our experience. For example, seatbelt 2 (secondary seatbelt) has a positive coefficient compared to no seatbelt requirement, which is not sensible. unemployment_rate_log has a positive coefficient, which is not what we expect as well.
+
+> We analyzed the model residuals below
+
+```{r}
 par(mfrow = c(2, 2))
 plot(mod.lm2)
 ```
+
 ```{r}
 forecast::checkresiduals(mod.lm2)
 ```
 
 
-> The model residuals improved over the prelimary linear model version based on the plots. However, the residual mean still has a lot of fluctuations and not around zero. The Normal Q-Q plot is closer to the normal distribution, better than the preliminary linear model. But serial correlation is still a major problem for the model residuals, based on the Breusch-Godfrey test and the ACF plot. Serial correlation makes standard error estimates and statistical inferences not reliable. 
+> The model residuals improved over the prelimary linear model version based on the plots. The Normal Q-Q plot is closer to the normal distribution, better than the preliminary linear model. However, the residuals still have a lot of variance fluctuations, and serial correlation is a major problem based on the Breusch-Godfrey test and the ACF plot. Serial correlation makes standard error estimates and statistical inferences not reliable. 
+
+> We will need to use robust standard errors.  
+
+```{r}
+# use the robust standard errors
+coeftest(mod.lm2, vcov. = vcovHC, type = "HC1")
+```
+
 
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 
@@ -707,7 +748,6 @@ coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 # blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[25]
 blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[1]
 
-
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
 exp(blood_alcohol_limit0.08_coef_fe) - 1
@@ -715,11 +755,11 @@ exp(blood_alcohol_limit0.08_coef_fe) - 1
 
 
 - What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
-> In this State-level fixed effects model, the estimated coefficient on blood alcohol limit 0.08 is -0.0048883, much less negative than the estimated coefficient of -0.045924 in the expanded linear model (mod.lm2). 
+> In this State-level fixed effects model, the estimated coefficient on blood alcohol limit 0.08 is -0.0236, less negative than the estimated coefficient of -0.045924 in the expanded linear model (mod.lm2). 
 
-> Additionally, the expanded linear model (mod.lm2) showed that this variable is statistically significant, but the State-level fixed effects model shows taht this variable's coefficient is not significantly different from zero. 
+> Additionally, the expanded linear model (mod.lm2) showed that this variable is statistically significant, but the State-level fixed effects model shows that this variable's coefficient is not significantly different from zero using the robust standard errors.
 
-> Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease marginally by 0.49%, which is not significant from statistical and practical perspectives. 
+> Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease marginally by 2.3%, which is less than the 4.4% decrease estimated by the expanded liniear model.  
 
 - What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
 
@@ -733,9 +773,9 @@ per_se_laws_coef_fe = mod.fe$coefficients[2]
 exp(per_se_laws_coef_fe) - 1
 ```
 
-> The estimated coefficient on *per se laws* is -0.0554823 and significantly different from zero at 0%. In the prior expanded linear model (mod.lm2), this variable has a coefficient of -0.022 and was not statistically significant.
+> The estimated coefficient on *per se laws* is -0.086 and significantly different from zero at 0% significance level, using the robust standard errors. In the prior expanded linear model (mod.lm2), this variable has a coefficient of -0.022 and was not statistically significant.
 
-> Its interpretation is that change per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 5.4%. This is significant both statistically and practically. Compared to the expanded model, the impact magnitude of per se laws estimated by the fixed effects model is much larger and is sensible.
+> Its interpretation is that change per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 8.2%. This is significant both statistically and practically. Compared to the expanded model, the impact magnitude of per se laws estimated by the fixed effects model is much larger and is sensible.
 
 - What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
 
@@ -749,9 +789,9 @@ seatbelt1_coef_fe = mod.fe$coefficients[4]
 exp(seatbelt1_coef_fe) - 1
 ```
 
-> The estimated coefficient on *primary seatbelt laws* is -0.041 and has strong evidence that it is difference from zero at 0.1%. The prior expanded model (mod.lm2) noted that this variable was not statistically significant, which was not aligned with our experience.
+> The estimated coefficient on *primary seatbelt laws* is -0.09 and has strong evidence that it is difference from zero at 0.05% significance level, using the robust standard errors. The prior expanded model (mod.lm2) noted that this variable was not statistically significant, which was not aligned with our experience. 
 
-> Its interpretation is that chaning seatbelt law requirement from none to primary will cause traffic fatalities rate to decrease by 4.1%, which is significant both statistically and practically. This effect makes much sense than the effect estimated by the expanded model. 
+> Its interpretation is that chaning seatbelt law requirement from none to primary will cause traffic fatalities rate to decrease by 8.7%, which is significant both statistically and practically. This effect makes much more sense than the marginal effect estimated by the expanded model.  
 
 Which set of estimates do you think is more reliable? Why do you think this?
 
@@ -760,13 +800,13 @@ forecast::checkresiduals(mod.fe)
 ```
 
 
-> For the State-level Fixed Effect models, as we extend the model to include the entire fixed effects, it mitigated the omitted variable bias issues and improved the model performance over the linear model versions.
+> For the State-level Fixed Effects models, the "within" setting eliminated the omitted variable bias for time-invariant fixed effects and improved the model performance over the linear models.  The linear models have omitted variable bias which caused the parameter estimates to be biased. 
 
-> The model residuals have a conditional mean around zero, with a normal distribution. Since this model uses the within setting to fit a fixed effect model at the state level, the effect of unobserved individual heterogeneity is eliminated. The conditinoal mean of zero assumption is met. 
+> We performed residuals diagnostic analysis for all models. For the State-level Fixed Effects model, the model residuals have a conditional mean around zero, with a normal distribution. Since this model uses the within setting to fit a fixed effect model at the state level, the effect of unobserved individual heterogeneity is eliminated. The conditinoal mean of zero assumption is met. 
 
-> Variance fluctulations are much improved compared to the expanded model. The ACF plot for the model residuals shows autocorrelation for the first few lags but decays quickly (this is much improved compared to the significant but non-decaying autocorrelation in the expanded model). We used the robust standard errors to account for the group heteroskedasticity and serial correlation by allowing correlation across time in groups.  
+> Variance fluctulations are much improved compared to the linear models. The ACF plot for the model residuals shows autocorrelation but decays quickly (this is much improved compared to the significant but non-decaying autocorrelation in the expanded model). We used the robust standard errors to account for the group heteroskedasticity and serial correlation by allowing correlation across time in groups.  
 
-> Based on the residuals analysis, the State-level Fixed Effects model will generate more reliable estimates. R2 increased from 0.67 to 0.73, as fixed effects are included in the model equation. 
+> Based on the residuals analysis, the State-level Fixed Effects model will generate more reliable estimates. 
 
 > Also, the parameter estimates' sign and magnitude in the Fixed Effects model make much sense than the expanded model, based on our EDA work and our experience. 
 
@@ -825,9 +865,9 @@ phtest(mod.fe, re.model)
 #summary(re.model)
 ```
 
-```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
+> While we don't think it is appropriate to use the random effect model, for information only, we included the random effect model in the comparison below.
 
-# While we don't think it is appropriate to use the random effect model, for information only, we included the random effect model in the comparison for information
+```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
 
 #calculate the robust standard errors for the models
 cov_exp        <- vcovHC(mod.lm2, type = "HC1")
@@ -859,7 +899,9 @@ re
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
 
-> Since the null hypothesis for the Hausman test is rejected, the last assumption is not met. Thus we should not use random effect model to estimate the coefficients since it will be bias. 
+> Since the null hypothesis for the Hausman test is rejected, the last assumption is not met. Thus we should not use random effect model to estimate the coefficients since the estimates will not likely to be consistent.
+
+> Random effects model is also not likely to be efficient, which means its variance would not be minimum and the standard error estimates could be biased. 
 
 # (10 points) Model Forecasts 
 
