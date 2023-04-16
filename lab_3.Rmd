@@ -806,9 +806,9 @@ forecast::checkresiduals(mod.fe)
 
 > Variance fluctulations are much improved compared to the linear models. The ACF plot for the model residuals shows autocorrelation but decays quickly (this is much improved compared to the significant but non-decaying autocorrelation in the expanded model). We used the robust standard errors to account for the group heteroskedasticity and serial correlation by allowing correlation across time in groups.  
 
-> Based on the residuals analysis, the State-level Fixed Effects model will generate more reliable estimates. 
+> Based on the residuals analysis, the State-level Fixed Effects model will generate more reliable estimates than the linear models. 
 
-> Also, the parameter estimates' sign and magnitude in the Fixed Effects model make much sense than the expanded model, based on our EDA work and our experience. 
+> Also, the parameter estimates' sign and magnitude in the State-level Fixed Effects model make much sense than the expanded model, based on our EDA work and our experience. 
 
 - What assumptions are needed in each of these models?
 
@@ -887,7 +887,7 @@ stargazer(mod.lm2, mod.fe, re.model,
           column.labels = c("expand model", "Fixed Effects","Random Effects"))
 ```
 
-```{r, warning=FALSE, include=FALSE, echo=FALSE}
+```{r, warning=FALSE}
 forecast::checkresiduals(re.model)
 ```
 
@@ -899,9 +899,11 @@ re
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
 
-> Since the null hypothesis for the Hausman test is rejected, the last assumption is not met. Thus we should not use random effect model to estimate the coefficients since the estimates will not likely to be consistent.
+> Since the null hypothesis for the Hausman test is rejected, the last assumption is not met. Thus we should not use the random effect model to estimate the coefficients since the estimates will not likely to be consistent.
 
-> Random effects model is also not likely to be efficient, which means its variance would not be minimum and the standard error estimates could be biased. 
+> The random effects model is also not likely to be efficient, which means its variance would not be minimum or stable causing the standard errors to be biased and test statistics to be not reliable. 
+
+> The random effects model assumes the individual unobserved heterogeneity is uncorrelated with the independent variables. However, the Hausman test shows strong evidence of correlation and therefore biases.  This model could underestimate the standard errors. 
 
 # (10 points) Model Forecasts 
 
