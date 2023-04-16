@@ -865,7 +865,8 @@ phtest(mod.fe, re.model)
 #summary(re.model)
 ```
 
-> While we don't think it is appropriate to use the random effect model, for information only, we included the random effect model in the comparison below.
+> While we don't think it is appropriate to use the random effect model, we included the random effect model in the comparison below for information only.
+
 
 ```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
 
@@ -887,7 +888,7 @@ stargazer(mod.lm2, mod.fe, re.model,
           column.labels = c("expand model", "Fixed Effects","Random Effects"))
 ```
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, include=FALSE, echo=FALSE}
 forecast::checkresiduals(re.model)
 ```
 
@@ -901,9 +902,11 @@ re
 
 > Since the null hypothesis for the Hausman test is rejected, the last assumption is not met. Thus we should not use the random effect model to estimate the coefficients since the estimates will not likely to be consistent.
 
-> The random effects model is also not likely to be efficient, which means its variance would not be minimum or stable causing the standard errors to be biased and test statistics to be not reliable. 
+> The random effects model assumes the individual unobserved heterogeneity is uncorrelated with the independent variables. However, the Hausman test shows strong evidence that correlation exists. Therefore, using the random effects model for this dataset could produce bias in parameters estimates. This bias does not arise in the fixed effects model, because the fixed effects model assumes that the omitted fixed effects can be correlated with the other variables. Fixed effects models remove the effect of time-invariant variables so we can assess the net effect of the other predictors on the response variable (total traffic fatalities rate).
 
-> The random effects model assumes the individual unobserved heterogeneity is uncorrelated with the independent variables. However, the Hausman test shows strong evidence of correlation and therefore biases.  This model could underestimate the standard errors. 
+> Given the Hausman test result, the random effects model is also not likely to be efficient, which means its variance would not be minimum or stable causing the standard errors to be biased and test statistics to be not reliable. 
+
+> From a practical perspective, fixed effects models are relatively straighforward. However, random effects models require additional mathematical assumptions with added-complexity, which strenthens the argument of not using the random effects model in this case.
 
 # (10 points) Model Forecasts 
 
@@ -937,15 +940,21 @@ vehicle_miles_annual <- vehicle_miles_month %>%
   group_by(year) %>%
   summarise(total = sum(vehicle_miles))
 
+vehicle_miles_annual
+
 df_annual <- df %>%
   group_by(year) %>%
   summarise(total = sum(vehicle_miles))
+df_annual
 
 # calculate the avg difference between the two data
-
+# 
 combined_mile_annual <- vehicle_miles_annual %>%
   filter(year <= 2004) %>%
-  rename(new = total, new_year = year) %>%
+  dplyr::rename(
+    "new" = "total",
+    "new_year" = "year") %>%
+  # rename(new = total, new_year = year) %>%
   cbind(df_annual) %>%
   mutate(diff = (new - total) / total)
 
@@ -972,6 +981,8 @@ ggplot() +
     y = "Vehicle Miles Traveled (billions)"
   )
 ```
+
+
 
 > We can see the new vehicle milage data is very similar to the old data, and the new data is always higher than the old data. The average difference between the two data is 0.8%.
 
