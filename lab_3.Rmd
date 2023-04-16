@@ -541,7 +541,7 @@ forecast::checkresiduals(mod.lm1)
 > As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is.
 
 - What does this model explain, and what do you find in this model? 
-> As noted above, we expect the fatalities rate to decline over the years given our EDA observations. This model shows whether a given year has a linear relationship with total fatalities rate, with Year 1980 as the base value in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable, as it is just one year after the base year of 1980 and the declining effect may not be statistically significant. 
+> As noted above, we expect the fatalities rate to decline over the years given our EDA observations. This model shows whether a given year has a linear relationship with total fatalities rate, with Year 1980 as the base value in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable in this model. 
 
 - Did driving become safer over this period? Please provide a detailed explanation.
 > As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time by itself does not necessarily have a causal effect on the fatalities rates. There are many other factors (e.g. law and economics/demographic variables) that could explain the changes in total fatalities rates over the period, as we summarized as the key take-aways in the last part of our EDA section.
@@ -741,7 +741,7 @@ forecast::checkresiduals(mod.fe)
 
 > The model residuals have a conditional mean around zero, with a normal distribution. Since this model uses the within setting to fit a fixed effect model at the state level, the effect of unobserved individual heterogeneity is eliminated. The conditinoal mean of zero assumption is met. 
 
-> Variance fluctulations are much improved compared to the expanded model. The ACF plot shows autocorrelation for the first few lags but decays quickly. This is much better than the ACF plot of the expanded model. As noted in the expanded model residuals analysis, there was signicant and slow decaying serial correlation in the residuals which makes the expanded model's standard errors and statistical inferences not reliable.  
+> Variance fluctulations are much improved compared to the expanded model. The ACF plot for the model residuals shows autocorrelation for the first few lags but decays quickly (this is much improved compared to the significant but non-decaying autocorrelation in the expanded model). We used the robust standard errors to account for the group heteroskedasticity and serial correlation by allowing correlation across time in groups.  
 
 > Based on the residuals analysis, the State-level Fixed Effects model will generate more reliable estimates. R2 increased from 0.67 to 0.73, as fixed effects are included in the model equation. 
 
@@ -775,8 +775,13 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 
-> The first set of assumption is met under the fixed effect analsysis. To test for the second assumption, we will perform Hausman Test for Fixed vs. Random Effects under the null hypothesis is that the random effects model is acceptable while the alternative hypothesis is there is correlation between residuals and predictors, meaning we should use the fixed effects model. Here, our test resulted in a p-value of 2.649e-7, which is significantly lower than the 95% confidence level, alpha = 0.05. Thus, there are sufficient evidence to reject the Null hypothesis and that the residuals and the predictors are uncorrelated.
-> Once fitted, the random effects models yield a lower set of coefficients compared to the fixed effect model. Most notably, the 1981 category variable coefficient for the random effect model is significantly lower than the fixed effect models. Another interesting observation is that the estimated coefficients for seatbelt1, graduated_drivers_license_law and pct_population_14_to_24 become more significant under the t-test, with p-value < 0.01 compared to the fixed effect model. Overall, the changes in the estimated coefficients and their significant could be attribute to the fact that using the random effect model, we're able to captured the variations in fatality rate across states.
+> The first set of assumption is already met under the fixed effect analsysis. To test for the last assumption, we will perform Hausman Test for Fixed vs. Random Effects. In the null hypothesis, both estimates are consistent but only the random effects model estimates are efficient (minimum variance). The alternative hypothes is that only the coefficients of the fixed effects model are consistent, and the coefficients of the random effects model are not consistent. The alternative hypothesis means that there is correlation between residuals and predictors. 
+
+> If Hausman test p-value is less than the significance level, we reject the null hypothesis and deem that the fixed-effects model should be preferred instead of a random-effects model.
+
+> Our test result below shows a p-value of 2.649e-7, which is significantly lower than the 95% confidence level, alpha = 0.05. Thus, there are sufficient evidence to reject the null hypothesis that a random effects model is appropriate, suggesting that we should use the fixed effect models. The random effects model is not likely to be consistent in this case, which means that the paramater estimates won't get closer to the the true parameter values even with a large sample size.
+
+> Based on the above notes, we don't think it is appropriate to use the random effects model for this dataset.
 
 ```{r random-effect-model estimate}
 re.model <- plm(
@@ -797,10 +802,38 @@ re.model <- plm(
 phtest(mod.fe, re.model)
 summary(re.model)
 ```
+```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
+
+# While we don't think it is appropriate to use the random effect model, for information only, we included the random effect model in the comparison for information
+
+#calculate the robust standard errors for the models
+cov_exp        <- vcovHC(mod.lm2, type = "HC1")
+robust_se_exp    <- sqrt(diag(cov_exp))
+
+cov_fe        <- vcovHC(mod.fe, type = "HC1")
+robust_se_fe    <- sqrt(diag(cov_fe))
+
+cov_rm        <- vcovHC(re.model, type = "HC1")
+robust_se_rm    <- sqrt(diag(cov_rm))
+
+#compare the three models, show robust standard errors in the comparison
+stargazer(mod.lm2, mod.fe, re.model, 
+          type="text",
+          omit.stat=c("adj.rsq","f"),
+          se = list(robust_se_exp, robust_se_fe, robust_se_rm),
+          column.labels = c("expand model", "Fixed Effects","Random Effects"))
+```
+
+
+
+```{r, warning=FALSE, include=FALSE, echo=FALSE}
+forecast::checkresiduals(re.model)
+```
+
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
 
-
+> 
 
 # (10 points) Model Forecasts 
 
