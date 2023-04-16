@@ -679,7 +679,7 @@ exp(seatbelt1_coef) - 1
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
 ```{r}
-df <- plm.data(df, indexes = 'state')
+df <- plm.data(df, indexes = c('year','state'))
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
   log(total_fatalities_rate) ~ year_of_observation
@@ -818,7 +818,7 @@ re.model <- plm(
 )
 
 phtest(mod.fe, re.model)
-summary(re.model)
+#summary(re.model)
 ```
 
 ```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
@@ -847,17 +847,15 @@ stargazer(mod.lm2, mod.fe, re.model,
 forecast::checkresiduals(re.model)
 ```
 
-```{r check random effects}
+```{r check random effects, include=FALSE, echo=FALSE}
 re <- data.frame(ranef(re.model))
 re
 ```
 
 
-
-
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
 
-> 
+> Since the null hypothesis for the Hausman test is rejected, the last assumption is not met. Thus we should not use random effect model to estimate the coefficients since it will be bias. 
 
 # (10 points) Model Forecasts 
 
