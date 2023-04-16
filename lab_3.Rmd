@@ -603,6 +603,8 @@ If it is appropriate, include transformations of these variables. Please careful
 - Below is the result of the expanded model (mod.lm2).
 
 ```{r}
+#df <- pdata.frame(df, index = c('state', 'year_of_observation'))
+
 mod.lm2 <- lm(
   log(total_fatalities_rate) ~ year_of_observation
     + factor(blood_alcohol_limit)
@@ -679,11 +681,9 @@ exp(seatbelt1_coef) - 1
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
 ```{r}
-df <- pdata.frame(df, index = c('year_of_observation','state'))
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
-  log(total_fatalities_rate) ~ 
-    factor(blood_alcohol_limit)
+  log(total_fatalities_rate) ~ factor(blood_alcohol_limit)
     + factor(per_se_laws)
     + factor(seatbelt)
     + factor(speed_limit_70plus)
@@ -693,7 +693,8 @@ mod.fe <- plm(
     + vehicle_miles_per_capita_log,
   data = df,
   index = c("state", "year_of_observation"),
-  model = "within"
+  model = "within",
+  effect="individual"
 )
 
 summary(mod.fe)
@@ -703,7 +704,7 @@ coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 
 ```{r}
 #coefficient of blood_alcohol_limit0.08
-#blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[25]
+# blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[25]
 blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[1]
 
 
@@ -724,7 +725,7 @@ exp(blood_alcohol_limit0.08_coef_fe) - 1
 
 ```{r}
 #coefficient of per_se_laws 
-# per_se_laws_coef_fe = mod.fe$coefficients[26]
+#per_se_laws_coef_fe = mod.fe$coefficients[26]
 per_se_laws_coef_fe = mod.fe$coefficients[2]
 
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
@@ -972,5 +973,5 @@ pcdtest(mod.fe, test = "lm")
 pbgtest(mod.fe, order = 2)
 ```
 
-> If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors of the estimators will be biased and underestimated. In our cases, when we apply the Breusch Pagan Test on homoskedasticity, we obtained a p-value of 2.2e-16, which is significantly less than 0.05, suggesting that there is sign of heteroskedasticity from the idiosyncratic error. Performing the Breusch-Godfrey test, we obtain a p-value of 0.9791, which is significantly more than 0.05, suggesting that we have do not have serially correlation in idiosyncratic errors. 
+> If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors of the estimators will be biased and underestimated. In our cases, when we apply the Breusch Pagan Test on homoskedasticity, we obtained a p-value of 2.2e-16, which is significantly less than 0.05, suggesting that there is sign of heteroskedasticity from the idiosyncratic error. Performing the Breusch-Godfrey test, we obtain a p-value of 2.2e-16, which is significantly less than 0.05, suggesting that we have do have serially correlation in idiosyncratic errors. 
 
