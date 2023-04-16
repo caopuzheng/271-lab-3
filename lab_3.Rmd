@@ -679,6 +679,7 @@ exp(seatbelt1_coef) - 1
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
 ```{r}
+df <- plm.data(df, indexes = 'state')
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
   log(total_fatalities_rate) ~ year_of_observation
@@ -848,7 +849,7 @@ forecast::checkresiduals(re.model)
 
 ```{r check random effects}
 re <- data.frame(ranef(re.model))
-re[c(1:10)]
+re
 ```
 
 
@@ -962,6 +963,5 @@ Now, use these changes in driving to make forecasts from your models.
 
 If there were serial correlation or heteroskedasticity in the idiosyncratic errors of the model, what would be the consequences on the estimators and their standard errors? Is there any serial correlation or heteroskedasticity? 
 
-> If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors of the estimators will be biased and underestimated.
-> #TODO: test the residuals
+> If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors of the estimators will be biased and underestimated. In our cases, both the fixed effects and random effects models showed a normally distributed residuals, leading us to conclude that there are no serial correlation or heteroskedasticity.
 
