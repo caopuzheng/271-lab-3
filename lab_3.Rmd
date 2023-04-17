@@ -35,19 +35,29 @@ if (!"reshape2" %in% rownames(installed.packages())) {
 library(reshape2)
 
 
-if(!"ggplot2"%in%rownames(installed.packages())) {install.packages("ggplot2")}
+if (!"ggplot2" %in% rownames(installed.packages())) {
+  install.packages("ggplot2")
+}
 library(ggplot2)
 
-if(!"gridExtra"%in%rownames(installed.packages())) {install.packages("gridExtra")}
+if (!"gridExtra" %in% rownames(installed.packages())) {
+  install.packages("gridExtra")
+}
 library(gridExtra)
 
-if(!"tibble"%in%rownames(installed.packages())) {install.packages("tibble")}
+if (!"tibble" %in% rownames(installed.packages())) {
+  install.packages("tibble")
+}
 library(tibble)
 
-if(!"lme4"%in%rownames(installed.packages())) {install.packages("lme4")}
+if (!"lme4" %in% rownames(installed.packages())) {
+  install.packages("lme4")
+}
 library(lme4)
 
-if(!"stargazer"%in%rownames(installed.packages())) {install.packages("stargazer")}
+if (!"stargazer" %in% rownames(installed.packages())) {
+  install.packages("stargazer")
+}
 library(stargazer)
 
 library(lubridate)
@@ -88,7 +98,7 @@ load(file = "./data/driving.RData")
     
 ```{r, warning=FALSE, message=FALSE}
 # produce new variables - year_of_observation, speed_limit, speed_limit_70plus, blood_alcohol_limit
-# 
+#
 df <- data %>%
   mutate(state = factor(state)) %>%
   rowwise() %>%
@@ -174,10 +184,10 @@ df <- df %>%
 ```
 
 ```{r echo=FALSE}
-check_sl65 <- data %>% 
-  filter(sl65>0 & sl65<1) %>% 
-  select(sl55,sl65,sl70,sl75,slnone) %>% 
-  mutate(sum_sl = sum(sl55,sl65,sl70,sl75,slnone)) 
+check_sl65 <- data %>%
+  filter(sl65 > 0 & sl65 < 1) %>%
+  select(sl55, sl65, sl70, sl75, slnone) %>%
+  mutate(sum_sl = sum(sl55, sl65, sl70, sl75, slnone))
 head(check_sl65, 2)
 ```
 
@@ -192,11 +202,11 @@ head(check_sl65, 2)
 # df$zero_tolerance_law %>%
 #   table(useNA = "ifany") %>%
 #   as.data.frame()
-# 
+#
 # df$graduated_drivers_license_law %>%
 #   table(useNA = "ifany") %>%
 #   as.data.frame()
-# 
+#
 # df$per_se_laws %>%
 #   table(useNA = "ifany") %>%
 #   as.data.frame()
@@ -217,14 +227,14 @@ df <- df %>%
     ),
     blood_alcohol_limit_binary = ifelse(
       blood_alcohol_limit == 0.1, 1, 0
-    )  # set 1 for 0.1 blood_alcohol_limit and 0 for 0.08 blood_alcohol_limit 
+    ) # set 1 for 0.1 blood_alcohol_limit and 0 for 0.08 blood_alcohol_limit
   )
 ```
 
 > 3) We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. Since we expect these columns to have binary values (0,1) given the definition, we decided to treat all non-zero values as 1 and make it a binary variable.  We also created a binary variable blood_alcohol_limit_binary to set 1 for 0.1 blood_alcohol_limit and 0 for 0.08 blood_alcohol_limit, as there are only two values (0.1 and 0.08) for this variable.
 
 ```{r minimum-drinking-age}
-#check minimum_drinking_age 
+# check minimum_drinking_age
 # df$minimum_drinking_age %>%
 #   table(useNA = "ifany") %>%
 #   as.data.frame()
@@ -606,7 +616,7 @@ If it is appropriate, include transformations of these variables. Please careful
 - Below is the result of the expanded model (mod.lm2).
 
 ```{r}
-#df <- pdata.frame(df, index = c('state', 'year_of_observation'))
+# df <- pdata.frame(df, index = c('state', 'year_of_observation'))
 
 mod.lm2 <- lm(
   log(total_fatalities_rate) ~ year_of_observation
@@ -619,10 +629,10 @@ mod.lm2 <- lm(
     + unemployment_rate_log
     + vehicle_miles_per_capita_log,
   data = df
-
 )
 #summary(mod.lm2)
 ```
+
 > Looking at the coefficients estimates, all the years coefficients are negative, which aligns with our EDA observations. However, some of the coefficients have unintuitive signs and not aligned with our EDA work and our experience. For example, seatbelt 2 (secondary seatbelt) has a positive coefficient compared to no seatbelt requirement, which is not sensible. unemployment_rate_log has a positive coefficient, which is not what we expect as well.
 
 > We analyzed the model residuals below
@@ -645,13 +655,12 @@ coeftest(mod.lm2, vcov. = vcovHC, type = "HC1")
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 
 ```{r}
-#coefficient of blood_alcohol_limit0.08
-blood_alcohol_limit0.08_coef = mod.lm2$coefficients[26]
+# coefficient of blood_alcohol_limit0.08
+blood_alcohol_limit0.08_coef <- mod.lm2$coefficients[26]
 
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
 exp(blood_alcohol_limit0.08_coef) - 1
-
 ```
 
 > Every state in the United States has laws making it illegal to operate a motor vehicle while under the influence of alcohol. In each state, the blood alcohol content (BAC) has a legal limit of 0.08% or 0.1% for ordinary, non-commercial vehicles. In this dataset, blood_alcohol_limit variable represents the BAC legal limit for each state, either 0.1 and 0.08. 
@@ -662,8 +671,8 @@ exp(blood_alcohol_limit0.08_coef) - 1
 - Do *per se laws* have a negative effect on the fatality rate? 
 
 ```{r}
-#coefficient of per_se_laws 
-per_se_laws_coef = mod.lm2$coefficients[27]
+# coefficient of per_se_laws
+per_se_laws_coef <- mod.lm2$coefficients[27]
 
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
@@ -678,8 +687,8 @@ exp(per_se_laws_coef) - 1
 - Does having a primary seat belt law?
 
 ```{r}
-#coefficient of primary seat belt
-seatbelt1_coef = mod.lm2$coefficients[29]
+# coefficient of primary seat belt
+seatbelt1_coef <- mod.lm2$coefficients[29]
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
@@ -697,7 +706,7 @@ Re-estimate the **Expanded Model** using fixed effects at the state level.
 ```{r}
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
-  log(total_fatalities_rate) ~ year_of_observation 
+  log(total_fatalities_rate) ~ year_of_observation
     + factor(blood_alcohol_limit)
     + factor(per_se_laws)
     + factor(seatbelt)
@@ -710,7 +719,7 @@ mod.fe <- plm(
   data = df,
   index = c("state", "year_of_observation"),
   model = "within",
-  effect="individual"
+  effect = "individual"
 )
 
 #summary(mod.fe)
@@ -722,6 +731,7 @@ coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 #coefficient of blood_alcohol_limit0.08
 blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[25]
 #blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[1]
+
 
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
@@ -743,6 +753,7 @@ exp(blood_alcohol_limit0.08_coef_fe) - 1
 per_se_laws_coef_fe = mod.fe$coefficients[26]
 #per_se_laws_coef_fe = mod.fe$coefficients[2]
 
+
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
 exp(per_se_laws_coef_fe) - 1
@@ -758,6 +769,7 @@ exp(per_se_laws_coef_fe) - 1
 #coefficient of primary seat belt
 seatbelt1_coef_fe = mod.fe$coefficients[28]
 #seatbelt1_coef_fe = mod.fe$coefficients[4]
+
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
 # Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
@@ -823,7 +835,7 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 ```{r random-effect-model estimate}
 re.model <- plm(
-  log(total_fatalities_rate) ~ year_of_observation 
+  log(total_fatalities_rate) ~ year_of_observation
     + factor(blood_alcohol_limit)
     + factor(per_se_laws)
     + factor(seatbelt)
@@ -838,13 +850,14 @@ re.model <- plm(
 )
 
 phtest(mod.fe, re.model)
-#summary(re.model)
+# summary(re.model)
 ```
 
 > While we don't think it is appropriate to use the random effect model, we included the random effect model in the comparison below for information only.
 
 
 ```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
+<<<<<<< HEAD
 
 #calculate the robust standard errors for the models
 cov_exp        <- vcovHC(mod.lm2, type = "HC1")
@@ -862,6 +875,25 @@ stargazer(mod.lm2, mod.fe, re.model,
           omit.stat=c("adj.rsq","f"),
           se = list(robust_se_exp, robust_se_fe, robust_se_rm),
           column.labels = c("expand model", "Fixed Effects","Random Effects"))
+=======
+# calculate the robust standard errors for the models
+cov_exp <- vcovHC(mod.lm2, type = "HC1")
+robust_se_exp <- sqrt(diag(cov_exp))
+
+cov_fe <- vcovHC(mod.fe, type = "HC1")
+robust_se_fe <- sqrt(diag(cov_fe))
+
+cov_rm <- vcovHC(re.model, type = "HC1")
+robust_se_rm <- sqrt(diag(cov_rm))
+
+# compare the three models, show robust standard errors in the comparison
+stargazer(mod.lm2, mod.fe, re.model,
+  type = "text",
+  omit.stat = c("adj.rsq", "f"),
+  se = list(robust_se_exp, robust_se_fe, robust_se_rm),
+  column.labels = c("expand model", "Fixed Effects", "Random Effects")
+)
+>>>>>>> 150e08e9d450950593f2ab997203ccf03b07fda0
 ```
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
@@ -889,7 +921,7 @@ The COVID-19 pandemic dramatically changed patterns of driving. Find data (and i
 > We have downloaded the data that is compiled by Bloomberg (under ticker: VMTDVCLE Index) and saved it in the file `data/VMTDVCLE.csv`.
 
 ```{r monthly-miles-driven-covid}
-#load the monthly new panel data
+# load the monthly new panel data
 vehicle_miles_month <- read.csv("./data/VMTDVCLE.csv",
   sep = ",",
   skip = 5
@@ -904,24 +936,25 @@ vehicle_miles_month <- read.csv("./data/VMTDVCLE.csv",
   select(year, month, vehicle_miles) %>%
   arrange(year, month)
 
-#create the annual data by grouping the new monthly data by year
+# create the annual data by grouping the new monthly data by year
 vehicle_miles_annual <- vehicle_miles_month %>%
   filter(year < 2023) %>% # remove the 2023 data since it's not complete
   group_by(year) %>%
   summarise(total = sum(vehicle_miles))
 
-# create the annual data by grouping the original data by year 
+# create the annual data by grouping the original data by year
 df_annual <- df %>%
   group_by(year) %>%
   summarise(total = sum(vehicle_miles))
 
 # calculate the avg difference between the two data
-# 
+#
 combined_mile_annual <- vehicle_miles_annual %>%
   filter(year <= 2004) %>%
   dplyr::rename(
     "new" = "total",
-    "new_year" = "year") %>%
+    "new_year" = "year"
+  ) %>%
   # rename(new = total, new_year = year) %>%
   cbind(df_annual) %>%
   mutate(diff = (new - total) / total)
@@ -1022,7 +1055,7 @@ df %>%
 ```
 
 ```{r warning=FALSE, echo=FALSE, include=FALSE}
-forecast:: checkresiduals(mod.fe)
+forecast::checkresiduals(mod.fe)
 ```
 
 ```{r, warning=FALSE, include=FALSE, echo=FALSE}
