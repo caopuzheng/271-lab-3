@@ -407,7 +407,7 @@ df %>%
   ylab("Total Fatalities Rate %")
 ```
 
-> Most states have downward trends in total fatalities rate over the years. We noted that the plots are sequentially ordered, except for missing state number 2, 9, and 12. 
+> We noted that the plots are sequentially ordered, despite of missing state number 2, 9, and 12. Most states have a downward trend in total fatalities rate over the years, however there are trend variations by state.
 
 ```{r pairplot-on-feature-of-interest-continuous, fig.height=5, fig.width=6}
 df %>%
@@ -468,10 +468,6 @@ df <- df %>%
   )
 ```
 
-
-```{r}
-unique(df$speed_limit)
-```
 
 > We used boxplots to visually examine the differences in total fatalities rate for the groups within each law categorical variable. We observed that stricter law requirements tend to associate with lower total fatalities rate, see below the detailed comments for each law variable.
 
@@ -554,7 +550,7 @@ As with every EDA this semester, the goal of this EDA is not to document your ow
 
 - 2) We conducted comprehensive data exploratory work by using extensive plots to visualize and examine the distribution of each variable, relationship between the total fatalities rate and the potential explanatory variables (including the log form of several variables), as well as the correlation among the variables. 
 
-- 3) Based on our exploratory work, we noted a declining trend of the total fatalities rates for most states over the period.  However, that does not mean time by itself caused the fatalities to go down, based on our experience.  We had two key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). These observations provide important insight and guidance to our subsequent modeling work.
+- 3) Based on our exploratory work, we noted a declining trend of the average of total fatalities rates over the period, with trend variations at the state level.  However, that does not mean time by itself caused the fatalities to go down, based on our experience. There could be many other factors that caused the total fatalities rates to go down over the years.  We had two key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). These observations provide important insight and guidance to our subsequent modeling work.
 
 
 # (15 points) Preliminary Model
@@ -921,6 +917,7 @@ The COVID-19 pandemic dramatically changed patterns of driving. Find data (and i
 > We have downloaded the data that is compiled by Bloomberg (under ticker: VMTDVCLE Index) and saved it in the file `data/VMTDVCLE.csv`.
 
 ```{r monthly-miles-driven-covid}
+#load the monthly new panel data
 vehicle_miles_month <- read.csv("./data/VMTDVCLE.csv",
   sep = ",",
   skip = 5
@@ -935,17 +932,16 @@ vehicle_miles_month <- read.csv("./data/VMTDVCLE.csv",
   select(year, month, vehicle_miles) %>%
   arrange(year, month)
 
+#create the annual data by grouping the new monthly data by year
 vehicle_miles_annual <- vehicle_miles_month %>%
   filter(year < 2023) %>% # remove the 2023 data since it's not complete
   group_by(year) %>%
   summarise(total = sum(vehicle_miles))
 
-vehicle_miles_annual
-
+# create the annual data by grouping the original data by year 
 df_annual <- df %>%
   group_by(year) %>%
   summarise(total = sum(vehicle_miles))
-df_annual
 
 # calculate the avg difference between the two data
 # 
@@ -965,11 +961,11 @@ avg_diff <- round(mean(combined_mile_annual$diff) * 100, 1)
 ggplot() +
   geom_line(
     data = vehicle_miles_annual,
-    aes(x = year, y = total, color = "BBG")
+    aes(x = year, y = total, color = "New Dataset Annual")
   ) +
   geom_line(
     data = df_annual,
-    aes(x = year, y = total, color = "Assignment")
+    aes(x = year, y = total, color = "Original Dataset Annual")
   ) +
   labs(
     title = "US Vehicle Miles Traveled (billions)",
@@ -990,7 +986,7 @@ ggplot() +
 
 > But we can believe the new data is a good replacement for the old data in our analysis.
 
-```{r monthly-miles-driven-covid-change}
+```{r monthly-miles-driven-covid-change, warning=FALSE, message=FALSE}
 vehicle_miles_month %>%
   filter(year >= 2018 & year < 2023) %>%
   group_by(month) %>%
