@@ -96,7 +96,7 @@ load(file = "./data/driving.RData")
     - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
 ```
     
-```{r, warning=FALSE, message=FALSE}
+```{r data-processing, warning=FALSE, message=FALSE, echo=FALSE}
 # produce new variables - year_of_observation, speed_limit, speed_limit_70plus, blood_alcohol_limit
 #
 df <- data %>%
@@ -323,7 +323,7 @@ df_avg %>%
 
 > Next, check the distribution of the continuous variables. We noted that the distributions of the variables are mostly right-skewed.  
   
-```{r, warning=FALSE, message=FALSE}
+```{r distribution-plots1, warning=FALSE, message=FALSE}
 df %>%
   select(
     total_fatalities_rate,
@@ -400,7 +400,7 @@ df %>%
 
 > We noted that the plots are sequentially ordered, despite of missing state number 2, 9, and 12. Most states have a downward trend in total fatalities rate over the years, however there are trend variations by state.
 
-```{r pairplot-on-feature-of-interest-continuous, fig.height=5, fig.width=6}
+```{r pairplot-on-feature-of-interest-continuous, fig.height=5, fig.width=6, echo=FALSE}
 df %>%
   mutate(
     vehicle_miles_log = log(vehicle_miles),
@@ -1012,7 +1012,16 @@ pbgtest(mod.fe, order = 2)
 
 > In this case, when we apply the Breusch Pagan Test on homoskedasticity to the FE model, we obtained a p-value of 2.2e-16, which is significantly less than 0.05, suggesting that there is sign of heteroskedasticity from the idiosyncratic errors. We also performed the Breusch-Godfrey test for serial correlation and obtained a p-value of 2.2e-16, which is significantly less than 0.05, suggesting that we have do have serially correlation in idiosyncratic errors. In the ACF plot, we can also visually detect the autocorrelation in the model residuals. 
 
-> Therefore, the FE model has serial correlation issues and standard errors are underestimated. We should use the robust standard errors to address heteroskedasticity and serial correlation issues by allowing correlation across time in groups.  
+> Therefore, the FE model has serial correlation issues and standard errors are underestimated. We should use the robust standard errors to address heteroskedasticity and serial correlation issues by allowing correlation across time in groups.
+
+# Appendix
+
+```{r data-processing2, ref.label='data-processing', echo=TRUE}
+```
+
+```{r pairplot-on-feature-of-interest-continuous2, ref.label='pairplot-on-feature-of-interest-continuous', echo=TRUE}
+```
+
 
 ```{r warning=FALSE, echo=FALSE, include=FALSE}
 par(mfrow = c(2, 2))
