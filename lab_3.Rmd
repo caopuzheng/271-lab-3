@@ -183,21 +183,20 @@ df <- df %>%
 # df %>% glimpse()
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, echo=FALSE, include=FALSE}
 check_sl65 <- data %>%
   filter(sl65 > 0 & sl65 < 1) %>%
   select(sl55, sl65, sl70, sl75, slnone) %>%
   mutate(sum_sl = sum(sl55, sl65, sl70, sl75, slnone))
-head(check_sl65, 2)
+#head(check_sl65, 2)
 ```
 
 > Several notes about our data processing: 
-
 > 1) As noted in the above 2 examples, the original dataset has some percentage values in the sl55/sl65/sl70/s75/slone columns. We expect these columnes to be binary (0, 1). In our data processing, we classified the category based on the field with the max value.  For example, we classified the first example as sl55, and the second example as sl70.
 
 > 2) speed_limit_70plus column has values that are not 0 or 1. We reclassified these values to 0 or 1, based on speed_limit column. We als reclassified the states with no speed limit as 1 for this variable at this stage.
 
-```{r data-diagnose-and-cleanup categorical fields}
+```{r data-diagnose-and-cleanup categorical fields, echo=FALSE, include=FALSE}
 # check the values of these fields
 # df$zero_tolerance_law %>%
 #   table(useNA = "ifany") %>%
@@ -233,7 +232,7 @@ df <- df %>%
 
 > 3) We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. Since we expect these columns to have binary values (0,1) given the definition, we decided to treat all non-zero values as 1 and make it a binary variable.  We also created a binary variable blood_alcohol_limit_binary to set 1 for 0.1 blood_alcohol_limit and 0 for 0.08 blood_alcohol_limit, as there are only two values (0.1 and 0.08) for this variable.
 
-```{r minimum-drinking-age}
+```{r minimum-drinking-age, echo=FALSE, include=FALSE}
 # check minimum_drinking_age
 # df$minimum_drinking_age %>%
 #   table(useNA = "ifany") %>%
@@ -247,7 +246,7 @@ df <- df %>%
 
 > 4) We noticed that the minimum_drinking_age column has values that are not integers. We decided to round these values to the nearest integer.
 
-```{r missing-speed-limit}
+```{r missing-speed-limit, echo=FALSE, include=FALSE}
 # check for na speed_limit rows
 check_na_speed <- df %>%
   filter(is.na(speed_limit)) %>%
@@ -372,7 +371,6 @@ df %>%
  - Graduated drivers license law, most states have 0
  - Speed limit: Most states have less than 70 miles
  - per-se_laws, seatbelt and zero_tolence_law are more evenly distributed among the categories
- 
  
 > We plotted total_fatalities_rate by state below to understand the fixed effects by state 
 
@@ -857,8 +855,6 @@ phtest(mod.fe, re.model)
 
 
 ```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
-<<<<<<< HEAD
-
 #calculate the robust standard errors for the models
 cov_exp        <- vcovHC(mod.lm2, type = "HC1")
 robust_se_exp    <- sqrt(diag(cov_exp))
@@ -874,26 +870,8 @@ stargazer(mod.lm2, mod.fe, re.model,
           type="latex",
           omit.stat=c("adj.rsq","f"),
           se = list(robust_se_exp, robust_se_fe, robust_se_rm),
+          omit=c("year_of_observation"),
           column.labels = c("expand model", "Fixed Effects","Random Effects"))
-=======
-# calculate the robust standard errors for the models
-cov_exp <- vcovHC(mod.lm2, type = "HC1")
-robust_se_exp <- sqrt(diag(cov_exp))
-
-cov_fe <- vcovHC(mod.fe, type = "HC1")
-robust_se_fe <- sqrt(diag(cov_fe))
-
-cov_rm <- vcovHC(re.model, type = "HC1")
-robust_se_rm <- sqrt(diag(cov_rm))
-
-# compare the three models, show robust standard errors in the comparison
-stargazer(mod.lm2, mod.fe, re.model,
-  type = "text",
-  omit.stat = c("adj.rsq", "f"),
-  se = list(robust_se_exp, robust_se_fe, robust_se_rm),
-  column.labels = c("expand model", "Fixed Effects", "Random Effects")
-)
->>>>>>> 150e08e9d450950593f2ab997203ccf03b07fda0
 ```
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
