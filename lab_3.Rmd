@@ -364,10 +364,6 @@ df %>%
  
 > We plotted total_fatalities_rate by state below to understand the fixed effects by state 
 
-```{r}
-df
-```
-
 
 ```{r}
 df %>%
