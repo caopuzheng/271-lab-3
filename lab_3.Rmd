@@ -716,14 +716,16 @@ Re-estimate the **Expanded Model** using fixed effects at the state level.
 ```{r}
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
-  log(total_fatalities_rate) ~ factor(blood_alcohol_limit)
+  log(total_fatalities_rate) ~ year_of_observation 
+    + factor(blood_alcohol_limit)
     + factor(per_se_laws)
     + factor(seatbelt)
     + factor(speed_limit_70plus)
     + factor(graduated_drivers_license_law)
     + pct_population_14_to_24
     + unemployment_rate_log
-    + vehicle_miles_per_capita_log,
+    + vehicle_miles_per_capita_log
+    + factor(state),
   data = df,
   index = c("state", "year_of_observation"),
   model = "within",
@@ -840,7 +842,8 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 ```{r random-effect-model estimate}
 re.model <- plm(
-  log(total_fatalities_rate) ~ factor(blood_alcohol_limit)
+  log(total_fatalities_rate) ~ year_of_observation 
+    + factor(blood_alcohol_limit)
     + factor(per_se_laws)
     + factor(seatbelt)
     + factor(speed_limit_70plus)
