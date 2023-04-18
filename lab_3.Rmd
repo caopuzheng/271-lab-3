@@ -365,7 +365,7 @@ df %>%
 > We also examined the distribution of the categorical variables (see Appendix 1.3). We observed: 1) Blood alcohol limit: Most states have the limit of 0.1; 2)Minimum drinking age: Most states have 21; 3) Graduated drivers license law: Most states have 0;4) Speed limit: Most states have less than 70 miles; 5) per-se_laws, seatbelt and zero_tolence_law are more evenly distributed among their categories.
 
 ```{r, categorical-variables, warning=FALSE,include=FALSE}
-#Appendix 1.3
+# Appendix 1.3
 df %>%
   select(
     seatbelt,
@@ -667,7 +667,7 @@ blood_alcohol_limit0.08_coef <- mod.lm2$coefficients[26]
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
 # Since the total fatalities rates are log-transformed
 # we will take the exponent of the coefficient to get the effect
-round(exp(blood_alcohol_limit0.08_coef) - 1,4)
+round(exp(blood_alcohol_limit0.08_coef) - 1, 4)
 ```
 
 
@@ -680,9 +680,9 @@ round(exp(blood_alcohol_limit0.08_coef) - 1,4)
 per_se_laws_coef <- mod.lm2$coefficients[27]
 
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
-# Since the response variable is the log form of the total fatalities rate, 
+# Since the response variable is the log form of the total fatalities rate,
 # we will take the exponent of the coefficient to get the effect
-round(exp(per_se_laws_coef)-1,4)
+round(exp(per_se_laws_coef) - 1, 4)
 ```
 
 
@@ -695,9 +695,9 @@ round(exp(per_se_laws_coef)-1,4)
 seatbelt1_coef <- mod.lm2$coefficients[29]
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
-# Since the response variable is the log form of the total fatalities rate, 
+# Since the response variable is the log form of the total fatalities rate,
 # we will take the exponent of the coefficient to get the effect
-exp(seatbelt1_coef)-1
+exp(seatbelt1_coef) - 1
 ```
 
 
@@ -725,7 +725,6 @@ mod.fe <- plm(
   model = "within",
   effect = "individual"
 )
-
 ```
 
 ```{r, results='hide'}
@@ -745,7 +744,7 @@ coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 blood_alcohol_limit0.08_coef_fe <- mod.fe$coefficients[25]
 
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
-# Since the response variable is the log form of the total fatalities rate, 
+# Since the response variable is the log form of the total fatalities rate,
 # we will take the exponent of the coefficient to get the effect
 round(exp(blood_alcohol_limit0.08_coef_fe) - 1, 4)
 ```
@@ -761,9 +760,9 @@ round(exp(blood_alcohol_limit0.08_coef_fe) - 1, 4)
 per_se_laws_coef_fe <- mod.fe$coefficients[26]
 
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
-# Since the response variable is the log form of the total fatalities rate, 
+# Since the response variable is the log form of the total fatalities rate,
 # we will take the exponent of the coefficient to get the effect
-round(exp(per_se_laws_coef_fe) - 1,  4)
+round(exp(per_se_laws_coef_fe) - 1, 4)
 ```
 
 
@@ -778,7 +777,7 @@ round(exp(per_se_laws_coef_fe) - 1,  4)
 seatbelt1_coef_fe <- mod.fe$coefficients[28]
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
-# Since the response variable is the log form of the total fatalities rate, 
+# Since the response variable is the log form of the total fatalities rate,
 # we will take the exponent of the coefficient to get the effect
 round(exp(seatbelt1_coef_fe) - 1, 4)
 ```
@@ -845,9 +844,9 @@ re.model <- plm(
   index = c("state", "year_of_observation"),
   model = "random"
 )
-#Hausman test below shows a p-value of 2.649e-7 
+# Hausman test below shows a p-value of 2.649e-7
 phtest(mod.fe, re.model)
-#show partial coefficient of state-level time-invariant fixed effects
+# show partial coefficient of state-level time-invariant fixed effects
 ranef(re.model)
 ```
 
