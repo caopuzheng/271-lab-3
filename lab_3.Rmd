@@ -1037,7 +1037,7 @@ pbgtest(mod.fe, order = 2)
 \newpage
 > **Appendix 1.5**
 
-```{r, expand-fixed-random-comparison-full, results='asis', message=FALSE, warning=FALSE, echo=FALSE}
+```{r, expand-fixed-random-comparison-full,header=FALSE, results='asis', message=FALSE, warning=FALSE, echo=FALSE}
 # Appendix 1.5
 # calculate the robust standard errors for the models
 cov_pre <- vcovHC(mod.lm1, type = "HC1")
@@ -1058,7 +1058,11 @@ stargazer(mod.lm1, mod.lm2, mod.fe, re.model,
   omit.stat = c("adj.rsq", "f"),
   se = list(robust_se_pre, robust_se_exp, robust_se_fe, robust_se_rm),
   column.labels = c("Prelim", "Expand", "Fixed Effects", "Random Effects"),
-  title = "Estimated Models on Total Fatality Rate"
+  title = "Estimated Models on Total Fatality Rate",
+  column.sep.width = "-15pt",
+  header = FALSE, # to get rid of r package output text,
+  single.row = TRUE, # to put coefficients and standard errors on same line
+  no.space = TRUE # to remove the spaces after each line of coefficients
 )
 ```
 
