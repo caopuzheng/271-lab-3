@@ -61,6 +61,11 @@ if (!"stargazer" %in% rownames(installed.packages())) {
 library(stargazer)
 
 library(lubridate)
+
+require(knitr)
+knitr::opts_chunk$set(tidy = TRUE, tidy.opts = list(comment = FALSE))
+knitr::opts_chunk$set(comment = " ")
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 ```
 
 
@@ -70,14 +75,14 @@ In this lab, we are asking you to answer the following **causal** question:
 
 > **"Do changes in traffic laws affect traffic fatalities?"**  
 
-```{asis, echo=FALSE}
+```{asis, echo=FALSE, include = FALSE}
 
 To answer this question, please complete the tasks specified below using the data provided in `data/driving.Rdata`. This data includes 25 years of data that cover changes in various state drunk driving, seat belt, and speed limit laws. 
 
 Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is also provided in the dataset. 
 ```
 
-```{r load data, echo = TRUE}
+```{r load data, echo = TRUE, include = FALSE}
 load(file = "./data/driving.RData")
 ## please comment these calls in your work
 # glimpse(data)
@@ -87,16 +92,15 @@ load(file = "./data/driving.RData")
 
 # (30 points, total) Build and Describe the Data 
 
-1. (5 points) Load the data and produce useful features. Specifically: 
+1. (5 points) Load the data and produce useful features. 
 ```{asis, echo=FALSE}
-
     - Produce a new variable, called `speed_limit` that re-encodes the data that is in `sl55`, `sl65`, `sl70`, `sl75`, and `slnone`; 
     - Produce a new variable, called `year_of_observation` that re-encodes the data that is in `d80`, `d81`, ... , `d04`. 
     - Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series). 
     - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
 ```
     
-```{r, warning=FALSE, message=FALSE}
+```{r, include=FALSE}
 # produce new variables - year_of_observation, speed_limit, speed_limit_70plus, blood_alcohol_limit
 #
 df <- data %>%
@@ -183,20 +187,21 @@ df <- df %>%
 # df %>% glimpse()
 ```
 
-```{r echo=FALSE, echo=FALSE, include=FALSE}
+```{r include=FALSE}
 check_sl65 <- data %>%
   filter(sl65 > 0 & sl65 < 1) %>%
   select(sl55, sl65, sl70, sl75, slnone) %>%
   mutate(sum_sl = sum(sl55, sl65, sl70, sl75, slnone))
-#head(check_sl65, 2)
+# head(check_sl65, 2)
 ```
 
 > Several notes about our data processing: 
+
 > 1) As noted in the above 2 examples, the original dataset has some percentage values in the sl55/sl65/sl70/s75/slone columns. We expect these columnes to be binary (0, 1). In our data processing, we classified the category based on the field with the max value.  For example, we classified the first example as sl55, and the second example as sl70.
 
 > 2) speed_limit_70plus column has values that are not 0 or 1. We reclassified these values to 0 or 1, based on speed_limit column. We als reclassified the states with no speed limit as 1 for this variable at this stage.
 
-```{r data-diagnose-and-cleanup categorical fields, echo=FALSE, include=FALSE}
+```{r data-diagnose-and-cleanup categorical fields, include=FALSE}
 # check the values of these fields
 # df$zero_tolerance_law %>%
 #   table(useNA = "ifany") %>%
@@ -232,7 +237,7 @@ df <- df %>%
 
 > 3) We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. Since we expect these columns to have binary values (0,1) given the definition, we decided to treat all non-zero values as 1 and make it a binary variable.  We also created a binary variable blood_alcohol_limit_binary to set 1 for 0.1 blood_alcohol_limit and 0 for 0.08 blood_alcohol_limit, as there are only two values (0.1 and 0.08) for this variable.
 
-```{r minimum-drinking-age, echo=FALSE, include=FALSE}
+```{r minimum-drinking-age, include=FALSE}
 # check minimum_drinking_age
 # df$minimum_drinking_age %>%
 #   table(useNA = "ifany") %>%
@@ -272,30 +277,33 @@ df <- df %>%
 
 > We decided to set the $speed\_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the $speed\_limit$ to 75 for Montana between 2000 to 2004.
 
-2. (5 points) Provide a description of the basic structure of the dataset. What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
+2. (5 points) Provide a description of the basic structure of the dataset.
+```{asis, echo=FALSE}
+ What is this data? How, where, and when is it collected? Is the data generated through a survey or some other method? Is the data that is presented a sample from the population, or is it a *census* that represents the entire population? Minimally, this should include:
     - How is the our dependent variable of interest `total_fatalities_rate` defined? 
-    
-    > This data set is a balanced longitudinal dataset and contains traffic fatalities data for the 48 continental U.S. states from 1980 through 2004. For each year of observation, the dataset contains state-level cross sectional measurements of fatality count and rate. This data is collected and distributed by Jeffrey M. Wooldridge through this [link](https://github.com/JustinMShea/wooldridge). In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	
+```
 
----
-    
+> This data set is a balanced longitudinal dataset and contains traffic fatalities data for the 48 continental U.S. states from 1980 through 2004. For each year of observation, the dataset contains state-level cross sectional measurements of fatality count and rate. This data is collected and distributed by Jeffrey M. Wooldridge through this [link](https://github.com/JustinMShea/wooldridge). In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	
+
 > After our data processing work, the clean dataset (df) has 25 columns/fields which include:
 - Index variables: year_of_observation, state, year
 - 9 fatality variables: There are three measurements - fatality count, fatality count per 100M miles and fatality rate as defined as count per 100k population. These three measurements are provided for total, nighttime and weekend
 - 10 law and vehicle variables: 8 traffic laws indicators (seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, speed_limit, blood_alcohol_limit) and 2 driving variables (vehicle_miles, vehicle_miles_per_capita)
 - 3 Economics and demographic variables: statepop, unemployment_rate, pct_population_14_to_24
-    
-    
-3. (20 points) Conduct a very thorough EDA, which should include both graphical and tabular techniques, on the dataset, including both the dependent variable `total_fatalities_rate` and the potential explanatory variables. Minimally, this should include: 
-  - How is the our dependent variable of interest `total_fatalities_rate` defined? 
-  
-  > In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	   
-  
-  - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
-  
-  > See below the table and the plot.
 
-```{r avg-fatality-by-year, warning=FALSE}
+3. (20 points) Conduct a very thorough EDA.
+```{asis, echo=FALSE}
+ which should include both graphical and tabular techniques, on the dataset, including both the dependent variable `total_fatalities_rate` and the potential explanatory variables. Minimally, this should include: 
+  - How is the our dependent variable of interest `total_fatalities_rate` defined? 
+```
+> In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	   
+
+```{asis, echo=FALSE}
+- What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
+```
+> See below the table and the plot.
+
+```{r avg-fatality-by-year, warning=FALSE, fig.align='center', out.width="55%", echo=FALSE}
 df_avg <- df %>%
   group_by(year_of_observation) %>%
   summarise(avg_total_fatalities_rate = mean(total_fatalities_rate))
@@ -316,6 +324,12 @@ df_avg %>%
   geom_point() +
   geom_text(hjust = 0, vjust = -0.5) +
   theme_bw() +
+  # theme(
+  #   legend.position = "none",
+  #   axis.text.x = element_text(size = 8),
+  #   axis.text.y = element_text(size = 8),
+  #   strip.text = element_text(size = 8)
+  # ) +
   labs(title = "Average Total Fatalities Rate by Year") +
   xlab("Year") +
   ylab("Average Total Fatalities Rate %")
@@ -323,7 +337,7 @@ df_avg %>%
 
 > Next, check the distribution of the continuous variables. We noted that the distributions of the variables are mostly right-skewed.  
   
-```{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE, fig.align='center', out.width="55%", echo=FALSE}
 df %>%
   select(
     total_fatalities_rate,
@@ -347,7 +361,7 @@ df %>%
 
 > We also examined the count distribution of the categorical variables.
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, include=FALSE}
 df %>%
   select(
     seatbelt,
@@ -378,7 +392,7 @@ df %>%
 
 > We also plotted total_fatalities_rate by state below to understand the trend over the years. 
 
-```{r cross-sectional-plot, fig.height=6, fig.width=8}
+```{r cross-sectional-plot, fig.align='center', out.width="55%", echo=FALSE}
 # we do have 48 states -> missing states 2, 9, and 12.
 # Thus, the ordering is a little bit off
 df %>%
@@ -400,7 +414,16 @@ df %>%
 
 > We noted that the plots are sequentially ordered, despite of missing state number 2, 9, and 12. Most states have a downward trend in total fatalities rate over the years, however there are trend variations by state.
 
-```{r pairplot-on-feature-of-interest-continuous, fig.height=5, fig.width=6}
+> In the graph below, we explored log transformation on several variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. We visualized both the original and log transformed variables. The log transformation seemed to improve the relationship between the explanatory variable and the respond variable (total fatality rate) visually. Therefore we decided to use log transformation for our interpretation for vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
+
+> Total fatalities rate is positively correlated with unemployment_rate and percentage of population aged 14 through 24.
+
+> Total fatalities rate is negatively correlated with vehicle miles and state population which is not intuitive. We interpret this as population and vehicle miles are both increasing with time, so is the other driving forces of fatalities rate (quality of the car, technology of the car, road conditions, etc.), so the relationship between total fatalities rate vs vehicle miles and state population is potentially spurious, and thus inconsistent with our background knowlege.
+
+> Total fatalities rate is positively correlated with vehicle miles per capita, as what we expect. As the density of the population increases, there is expected to be more severe traffic incidents that leads to higher fatalities rate. This is consistent with our background knowledge. Therefore, it makes sense to use vehicle miles per capita which is normalized for the population. 
+
+```{r pairplot-on-feature-of-interest-continuous, fig.align='center', out.width="75%", echo=FALSE}
+# TODO: change this to be smaller plot
 df %>%
   mutate(
     vehicle_miles_log = log(vehicle_miles),
@@ -441,15 +464,7 @@ df %>%
   ylab("Total Fatality Rate")
 ```
 
-> We explored log transformation on several variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. We visualized both the original and log transformed variables. The log transformation seemed to improve the relationship between the explanatory variable and the respond variable (total fatality rate) visually.  Therefore we decided to use log transformation for our interpretation for vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
-
-> Total fatalities rate is positively correlated with unemployment_rate and percentage of population aged 14 through 24.
-
-> Total fatalities rate is negatively correlated with vehicle miles and state population which is not intuitive. We interpret this as population and vehicle miles are both increasing with time, so is the other driving forces of fatalities rate (quality of the car, technology of the car, road conditions, etc.), so the relationship between total fatalities rate vs vehicle miles and state population is potentially spurious, and thus inconsistent with our background knowlege.
-
-> Total fatalities rate is positively correlated with vehicle miles per capita, as what we expect. As the density of the population increases, there is expected to be more severe traffic incidents that leads to higher fatalities rate. This is consistent with our background knowledge. Therefore, it makes sense to use vehicle miles per capita which is normalized for the population. 
-
-```{r save-log-transformation}
+```{r save-log-transformation, include=FALSE}
 df <- df %>%
   mutate(
     vehicle_miles_log = log(vehicle_miles),
@@ -458,7 +473,6 @@ df <- df %>%
     unemployment_rate_log = log(unemployment_rate)
   )
 ```
-
 
 > We used boxplots to visually examine the differences in total fatalities rate for the groups within each law categorical variable. We observed that stricter law requirements tend to associate with lower total fatalities rate, see below the detailed comments for each law variable.
 
@@ -469,7 +483,7 @@ df <- df %>%
 - blood_alcohol_limit: 0.08 blood alcohol limit tends to have have lower fatalities rate, in comparison to 0.1 blood alcohol limit
 
 
-```{r pairplot-on-feature-of-interest-discrete, fig.height=5, fig.width=6, warning=FALSE}
+```{r pairplot-on-feature-of-interest-discrete, fig.align='center', out.width="75%", warning=FALSE, echo=FALSE}
 df %>%
   select(
     total_fatalities_rate,
@@ -499,7 +513,7 @@ df %>%
 
 > We examined the correlation matrix of the continuously variables, so we can eliminate including the explanatory variables with perfect correlation with each other. 
 
-```{r compute-pearson-correlation-confusion-matrix, fig.height=8, fig.width=8}
+```{r compute-pearson-correlation-confusion-matrix, fig.align='center', out.width="85%", echo=FALSE}
 df %>%
   mutate(seatbelt_num = as.numeric(seatbelt)) %>%
   select(
@@ -531,8 +545,9 @@ df %>%
 
 > The state population and vehicle miles are almost perfectly correlated. To avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model development. In our exploratory work above, we also noted that state population and vehicle miles seem to have spurious relationship with total fatalities rate, so it makes sense to exclude them in the model.  
 
-
+```{asis, echo=FALSE}
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
+```
 
 > To summarize our data exploratory work (as detailed in the above plots and comments), we noted the following key takeaways:
 
@@ -542,51 +557,46 @@ As with every EDA this semester, the goal of this EDA is not to document your ow
 
 - 3) Based on our exploratory work, we noted a declining trend of the average of total fatalities rates over the period, with trend variations at the state level.  However, that does not mean time by itself caused the fatalities to go down, based on our experience. There could be many other factors that caused the total fatalities rates to go down over the years.  We had two key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). These observations provide important insight and guidance to our subsequent modeling work.
 
-
+#TODO: put all models into appendix
 # (15 points) Preliminary Model
 ```{asis, echo=FALSE}
 Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004 and interpret what you observe. In this section, you should address the following tasks: 
 
-
 > Please see below the linear model summary and residual diagnostic analysis.
 ```
 
-```{r simple-linear-model}
+#TODO: add this to the stargazer
+```{r simple-linear-model, results='hide'}
 mod.lm1 <- lm((total_fatalities_rate) ~ year_of_observation, data = df)
-# summary(mod.lm1)
-# par(mfrow = c(2, 2))
-# plot(mod.lm1)
 ```
 
-```{r}
+```{r, results='hide'}
 coeftest(mod.lm1, vcov. = vcovHC, type = "HC1")
 forecast::checkresiduals(mod.lm1)
 ```
 
+```{asis, echo=FALSE}
 - Why is fitting a linear model a sensible starting place? 
-> As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is.
-
 - What does this model explain, and what do you find in this model? 
-> As noted above, we expect the fatalities rate to decline over the years given our EDA observations. This model shows whether a given year has a linear relationship with total fatalities rate, with Year 1980 as the base value in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable in this model. 
-
 - Did driving become safer over this period? Please provide a detailed explanation.
-> As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time by itself does not necessarily have a causal effect on the fatalities rates. There are many other factors (e.g. law and economics/demographic variables) that could explain the changes in total fatalities rates over the period, as we summarized as the key take-aways in the last part of our EDA section.
-
 - What, if any, are the limitation of this model. In answering this, please consider **at least**: 
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
-    
-    > Based on the residual diagnostic analysis and plots, the residuals have large fluctuations for each year and are not constant with zero mean expectation. This violates one of the key classical linear model assumptions - linear conditional mean. So the parameter estimates are biased and not reliable.
-    
-    > The parameter estimates are biased because the model recognizes year as the sole explanatory variable for the total fatalities rate.  This introduces omitted variable bias because we have not accounted for other factors such as law, economics and demographic explanatory variables, as we discussed in the EDA section. 
-    
 - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured?
-    
-   > In our residual analysis above, the residuals' distribution is not normal. variance is not constant (heteroskedasticity issues). The Breusch-Godfrey test for serial correlation has a p-value much less than 0.05. There is strong evidience of serial correlation in the model residuals. The ACF plot shows significant positive autocorrelation of many lags. With positive serial correlation, the standard errors (uncertain estimate of our parameter coefficients) are understated and the statistical inferences are not reliable.
-   
-   > We pulled heteroskedasticity-robust standard errors using coeftest(mod.lm1, vcov. = vcovHC, type = "HC1") above. The HC errors are higher than the standard error (1.2263) reported in the linear model. This dataset is structured by state and each state has 25 rows representing 25 years. Using this data structure and year as the sole variable, this model has omitted variables bias as noted above. 
-   
+```
+> As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is.
 
+> As noted above, we expect the fatalities rate to decline over the years given our EDA observations. This model shows whether a given year has a linear relationship with total fatalities rate, with Year 1980 as the base value in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable in this model. 
 
+> As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time by itself does not necessarily have a causal effect on the fatalities rates. There are many other factors (e.g. law and economics/demographic variables) that could explain the changes in total fatalities rates over the period, as we summarized as the key take-aways in the last part of our EDA section.
+
+> Based on the residual diagnostic analysis and plots, the residuals have large fluctuations for each year and are not constant with zero mean expectation. This violates one of the key classical linear model assumptions - linear conditional mean. So the parameter estimates are biased and not reliable.
+
+> The parameter estimates are biased because the model recognizes year as the sole explanatory variable for the total fatalities rate.  This introduces omitted variable bias because we have not accounted for other factors such as law, economics and demographic explanatory variables, as we discussed in the EDA section. 
+
+> In our residual analysis above, the residuals' distribution is not normal. variance is not constant (heteroskedasticity issues). The Breusch-Godfrey test for serial correlation has a p-value much less than 0.05. There is strong evidience of serial correlation in the model residuals. The ACF plot shows significant positive autocorrelation of many lags. With positive serial correlation, the standard errors (uncertain estimate of our parameter coefficients) are understated and the statistical inferences are not reliable.
+
+> We pulled heteroskedasticity-robust standard errors using coeftest(mod.lm1, vcov. = vcovHC, type = "HC1") above. The HC errors are higher than the standard error (1.2263) reported in the linear model. This dataset is structured by state and each state has 25 rows representing 25 years. Using this data structure and year as the sole variable, this model has omitted variables bias as noted above. 
+   
 # (15 points) Expanded Model 
 ```{asis, echo=FALSE}
 
@@ -614,8 +624,6 @@ If it is appropriate, include transformations of these variables. Please careful
 - Below is the result of the expanded model (mod.lm2).
 
 ```{r}
-# df <- pdata.frame(df, index = c('state', 'year_of_observation'))
-
 mod.lm2 <- lm(
   log(total_fatalities_rate) ~ year_of_observation
     + factor(blood_alcohol_limit)
@@ -628,7 +636,6 @@ mod.lm2 <- lm(
     + vehicle_miles_per_capita_log,
   data = df
 )
-#summary(mod.lm2)
 ```
 
 > Looking at the coefficients estimates, all the years coefficients are negative, which aligns with our EDA observations. However, some of the coefficients have unintuitive signs and not aligned with our EDA work and our experience. For example, seatbelt 2 (secondary seatbelt) has a positive coefficient compared to no seatbelt requirement, which is not sensible. unemployment_rate_log has a positive coefficient, which is not what we expect as well.
@@ -639,36 +646,34 @@ mod.lm2 <- lm(
 forecast::checkresiduals(mod.lm2)
 ```
 
-
 > The model residuals improved over the prelimary linear model version based on the plots. The Normal Q-Q plot is closer to the normal distribution, better than the preliminary linear model. However, the residuals still have a lot of variance fluctuations, and serial correlation is a major problem based on the Breusch-Godfrey test and the ACF plot. Serial correlation makes standard error estimates and statistical inferences not reliable. 
 
-> We will need to use robust standard errors.  
+> We will need to use robust standard errors.
 
-```{r}
+```{r, results='hide'}
 # use the robust standard errors
 coeftest(mod.lm2, vcov. = vcovHC, type = "HC1")
 ```
 
-
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 
-```{r}
+```{r, echo=FALSE}
 # coefficient of blood_alcohol_limit0.08
 blood_alcohol_limit0.08_coef <- mod.lm2$coefficients[26]
 
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
-# Since the response variable is the log form of the total fatalities rate, we will take the exponent of the coefficient to get the effect
+# Since the response variable is the log form of the total fatalities rate
+# we will take the exponent of the coefficient to get the effect
 exp(blood_alcohol_limit0.08_coef) - 1
 ```
 
 > Every state in the United States has laws making it illegal to operate a motor vehicle while under the influence of alcohol. In each state, the blood alcohol content (BAC) has a legal limit of 0.08% or 0.1% for ordinary, non-commercial vehicles. In this dataset, blood_alcohol_limit variable represents the BAC legal limit for each state, either 0.1 and 0.08. 
 
-> In this model version, blood_alcohol_limit  of 0.1 is the default value for the base model. The estimated coefficient on *blood alcohol limit 0.08* is -0.045924 and significantly different from zero at 5%. The interpretation of this coefficent is that changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower. 
-
+> In this model version, blood_alcohol_limit  of 0.1 is the default value for the base model. The estimated coefficient on *blood alcohol limit 0.08* is -4.6% and significantly different from zero at 5%. The interpretation of this coefficent is that changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower. 
 
 - Do *per se laws* have a negative effect on the fatality rate? 
 
-```{r}
+```{r, results='hide'}
 # coefficient of per_se_laws
 per_se_laws_coef <- mod.lm2$coefficients[27]
 
@@ -684,7 +689,7 @@ exp(per_se_laws_coef) - 1
 
 - Does having a primary seat belt law?
 
-```{r}
+```{r, results='hide'}
 # coefficient of primary seat belt
 seatbelt1_coef <- mod.lm2$coefficients[29]
 
@@ -701,7 +706,7 @@ exp(seatbelt1_coef) - 1
 
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
-```{r}
+```{r, results='hide'}
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
   log(total_fatalities_rate) ~ year_of_observation
@@ -720,15 +725,15 @@ mod.fe <- plm(
   effect = "individual"
 )
 
-#summary(mod.fe)
+# summary(mod.fe)
 # print summary using robust standard errors
 coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
 ```
 
-```{r}
-#coefficient of blood_alcohol_limit0.08
-blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[25]
-#blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[1]
+```{r, results='hide'}
+# coefficient of blood_alcohol_limit0.08
+blood_alcohol_limit0.08_coef_fe <- mod.fe$coefficients[25]
+# blood_alcohol_limit0.08_coef_fe = mod.fe$coefficients[1]
 
 
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
@@ -746,10 +751,10 @@ exp(blood_alcohol_limit0.08_coef_fe) - 1
 
 - What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
 
-```{r}
-#coefficient of per_se_laws 
-per_se_laws_coef_fe = mod.fe$coefficients[26]
-#per_se_laws_coef_fe = mod.fe$coefficients[2]
+```{r, results='hide'}
+# coefficient of per_se_laws
+per_se_laws_coef_fe <- mod.fe$coefficients[26]
+# per_se_laws_coef_fe = mod.fe$coefficients[2]
 
 
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
@@ -763,10 +768,10 @@ exp(per_se_laws_coef_fe) - 1
 
 - What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
 
-```{r}
-#coefficient of primary seat belt
-seatbelt1_coef_fe = mod.fe$coefficients[28]
-#seatbelt1_coef_fe = mod.fe$coefficients[4]
+```{r, results='hide'}
+# coefficient of primary seat belt
+seatbelt1_coef_fe <- mod.fe$coefficients[28]
+# seatbelt1_coef_fe = mod.fe$coefficients[4]
 
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
@@ -831,7 +836,7 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 > Based on the above notes, we don't think it is appropriate to use the random effects model for this dataset.
 
-```{r random-effect-model estimate}
+```{r random-effect-model estimate, results='hide'}
 re.model <- plm(
   log(total_fatalities_rate) ~ year_of_observation
     + factor(blood_alcohol_limit)
@@ -848,30 +853,29 @@ re.model <- plm(
 )
 
 phtest(mod.fe, re.model)
-# summary(re.model)
 ```
 
 > While we don't think it is appropriate to use the random effect model, we included the random effect model in the comparison below for information only.
 
+```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE, echo=FALSE}
+# calculate the robust standard errors for the models
+cov_exp <- vcovHC(mod.lm2, type = "HC1")
+robust_se_exp <- sqrt(diag(cov_exp))
 
-```{r, expand-fixed-random comparison, results='asis', message=FALSE, warning=FALSE}
-#calculate the robust standard errors for the models
-cov_exp        <- vcovHC(mod.lm2, type = "HC1")
-robust_se_exp    <- sqrt(diag(cov_exp))
+cov_fe <- vcovHC(mod.fe, type = "HC1")
+robust_se_fe <- sqrt(diag(cov_fe))
 
-cov_fe        <- vcovHC(mod.fe, type = "HC1")
-robust_se_fe    <- sqrt(diag(cov_fe))
+cov_rm <- vcovHC(re.model, type = "HC1")
+robust_se_rm <- sqrt(diag(cov_rm))
 
-cov_rm        <- vcovHC(re.model, type = "HC1")
-robust_se_rm    <- sqrt(diag(cov_rm))
-
-#compare the three models, show robust standard errors in the comparison
-stargazer(mod.lm2, mod.fe, re.model, 
-          type="latex",
-          omit.stat=c("adj.rsq","f"),
-          se = list(robust_se_exp, robust_se_fe, robust_se_rm),
-          omit=c("year_of_observation"),
-          column.labels = c("expand model", "Fixed Effects","Random Effects"))
+# compare the three models, show robust standard errors in the comparison
+stargazer(mod.lm2, mod.fe, re.model,
+  type = "latex",
+  omit.stat = c("adj.rsq", "f"),
+  se = list(robust_se_exp, robust_se_fe, robust_se_rm),
+  omit = c("year_of_observation"),
+  column.labels = c("expand model", "Fixed Effects", "Random Effects")
+)
 ```
 
 - If the assumptions are **not** met, then do not estimate the data. But, also comment on what the consequences would be if you were to *inappropriately* estimate a random effects model. Would your coefficient estimates be biased or not? Would your standard error estimates be biased or not? Or, would there be some other problem that might arise?
@@ -898,7 +902,7 @@ The COVID-19 pandemic dramatically changed patterns of driving. Find data (and i
 
 > We have downloaded the data that is compiled by Bloomberg (under ticker: VMTDVCLE Index) and saved it in the file `data/VMTDVCLE.csv`.
 
-```{r monthly-miles-driven-covid}
+```{r monthly-miles-driven-covid, fig.align='center', out.width="50%", echo=FALSE}
 # load the monthly new panel data
 vehicle_miles_month <- read.csv("./data/VMTDVCLE.csv",
   sep = ",",
@@ -962,14 +966,14 @@ ggplot() +
 ```
 
 
-
 > We can see the new vehicle milage data is very similar to the old data, and the new data is always higher than the old data. The average difference between the two data is 0.8%.
 
 > This is expected as the new vehicle miles data from Bloomberg include the entire United States, while the old data only include 48 states.
 
 > But we can believe the new data is a good replacement for the old data in our analysis.
 
-```{r monthly-miles-driven-covid-change, warning=FALSE, message=FALSE}
+#TODO: we could just show this side by side with the graph above? I don't know how to do that tho 
+```{r monthly-miles-driven-covid-change, fig.align='center', out.width="45%", echo=FALSE}
 vehicle_miles_month %>%
   filter(year >= 2018 & year < 2023) %>%
   group_by(month) %>%
@@ -985,13 +989,18 @@ vehicle_miles_month %>%
 
 > The largest decrease in driving during COVID bust is in April 2020 (-39.1% compared with April 2018), and the largest increase in driving post-COVID boom is in September 2022 (+5.0% compared with January 2018), which is technically before COVID.
 
+```{asis, echo=FALSE}
+
 Now, use these changes in driving to make forecasts from your models. 
-
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+```
 
-> Holding everything else constant, if the number of miles driven per capita increased by 5.0%, the number of traffic fatalities would increase by $5% * \beta = 3.8%$. Given the fatalities
+#TODO: add the new beta values below
+> Holding everything else constant, if the number of miles driven per capita increased by 5.0%, the number of traffic fatalities would increase by $5% * \beta = 3.8%$.
 
+```{asis, echo=FALSE}
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
+```
 
 > Holding everything else constant, if the number of miles driven per capita decreased by 39.1%, the number of traffic fatalities would increase by $-39.1% * \beta = -29.5%$. We should be cautious here since the change in miles driven per capita is very large, so the log transformation interpretation might not be accurate.
 
@@ -1021,12 +1030,13 @@ plot(mod.lm2)
 
 ```{r, warning=FALSE, echo=FALSE, include=FALSE}
 df %>%
-  ggplot(aes(reorder(state, desc(total_fatalities_rate)),total_fatalities_rate,
-             fill=state)) +
-  geom_boxplot(alpha=0.4) +
-  theme_economist_white(gray_bg=F) +
-  theme(legend.position="none",axis.text.y=element_text(size=6)) +
-  scale_y_continuous(label=percent) +
+  ggplot(aes(reorder(state, desc(total_fatalities_rate)), total_fatalities_rate,
+    fill = state
+  )) +
+  geom_boxplot(alpha = 0.4) +
+  theme_economist_white(gray_bg = F) +
+  theme(legend.position = "none", axis.text.y = element_text(size = 6)) +
+  scale_y_continuous(label = percent) +
   xlab("State") +
   ylab("Total Fatalities Rate%") +
   coord_flip()
