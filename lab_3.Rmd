@@ -199,7 +199,7 @@ check_sl65 <- data %>%
 
 > 1) We created new variables and renamed variables using sensibel variable names.
 
-> 2) Some rows of the traffice speed columns (sl55/sl65/sl70/s75/slone) have percentage values. These speed columns are categorical variables and should reflect binary values (0, 1). We classified the percentage values based on the field with the max value.  
+> 2) Some rows of the traffice speed columns (sl55/sl65/sl70/s75/slone) have percentage values. These speed columns are categorical variables and should reflect binary values (0, 1). We classified the percentage values based on the field with the max value.
 
 > 3) The speed_limit_70plus column has values that are not 0 or 1. We reclassified these values to 0 or 1, based on speed_limit column. We also reclassified the states with no speed limit as 1 in this column.
 
@@ -274,7 +274,7 @@ df <- df %>%
   )
 ```
 
-> 5) The $speed\_limit$ is not set for State 27 between 1996 to 2004. Based on our research, we noted that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. We decided to set the $speed\_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the $speed\_limit$ to 75 for Montana between 2000 to 2004.
+> 5) The $speed\_limit$ is not set for State 27 between 1996 to 2004. Based on our research, we noted that: for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads. But it doesn't mean there was no speed limit. We decided to set the $speed\_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85 mph. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the $speed\_limit$ to 75 for Montana between 2000 to 2004.
 
 2. (5 points) Provide a description of the basic structure of the dataset.
 ```{asis, echo=FALSE}
@@ -325,14 +325,8 @@ df_avg %>%
     label = round(avg_total_fatalities_rate, 2)
   )) +
   geom_point() +
-  geom_text(hjust = 0, vjust = -0.5) +
+  geom_text(hjust = 0, vjust = -0.5, size = 3) +
   theme_bw() +
-  # theme(
-  #   legend.position = "none",
-  #   axis.text.x = element_text(size = 8),
-  #   axis.text.y = element_text(size = 8),
-  #   strip.text = element_text(size = 8)
-  # ) +
   labs(title = "Average Total Fatalities Rate by Year") +
   xlab("Year") +
   ylab("Average Total Fatalities Rate %")
@@ -393,7 +387,7 @@ df %>%
     fill = state
   )) +
   geom_boxplot(alpha = 0.4) +
-  theme_economist_white(gray_bg = F) +
+  theme_economist_white(gray_bg = FALSE) +
   theme(legend.position = "none", axis.text.y = element_text(size = 6)) +
   scale_y_continuous(label = percent) +
   xlab("State") +
@@ -425,12 +419,11 @@ df %>%
 ```
 
 
-> Figure 4 below compares the original data vs. log-transformed data of several variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. The log transformation seemed to improve the relationship between some of these explanatory variables and total fatality rates. We decided to use log transformation for our interpretation of vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
+> Figure 4 below compares the original data vs. log-transformed data of several variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. The log transformation seemed to improve the relationship between some of these explanatory variables and total fatality rates, as the original data was more skewed. We decided to use log transformation for our interpretation of vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
 
 > Total fatalities rate is positively correlated with unemployment_rate and percentage of population aged 14-24. Total fatalities rate is negatively correlated with vehicle miles and state population which is not intuitive. We interpret this as population and vehicle miles are both increasing with time, so are other potential factors (e.g. car quality, technology, road conditions, etc.). we noted total fatalities rate is positively correlated with vehicle miles per capita, which is consistent with our background knowledge. Therefore, we will use vehicle miles per capita, instead of vehicle miles and state population separately.
 
 ```{r pairplot-on-feature-of-interest-continuous, fig.align='center', out.width="65%", echo=FALSE, fig.cap="Continous Explanatory Variables Effect on Total Fatality Rate"}
-# TODO: change this to be smaller plot
 df %>%
   mutate(
     vehicle_miles_log = log(vehicle_miles),
@@ -485,7 +478,6 @@ df <- df %>%
 
 > 1) Seatbelt: No seatbelt requirements tend to have higher fatalities rate than primary and secondary seatbelt requirements;  2) For zero_tolerance_law, graduated_drivers_license_law and per_se_laws: 0 (stricter laws) tends to have lower fatalities rate, comparedto having some level of tolerance in law requirements;  3) minimum_drinking_age: Higher legally-eligible age tends to have lower fatalities rate than lower age limit; 4) speed_limit_70plus: Below 70 speed limit tends to have lower fatalities rate than those with 70+ speed limit; 5) blood_alcohol_limit: 0.08 blood alcohol limit tends to have lower fatalities rate, compared to 0.1 blood alcohol limit.
 
-
 ```{r pairplot-on-feature-of-interest-discrete, fig.align='center', out.width="70%", warning=FALSE, echo=FALSE, fig.cap="Categorical Variables' Effect on Total Fatalities Rate"}
 df %>%
   select(
@@ -514,7 +506,7 @@ df %>%
   ylab("Total Fatality Rate")
 ```
 
-> We examined the correlation matrix (Figure 6) of the continuously variables to understand correlation between variables.  State population and vehicle miles are almost perfectly correlated. To avoid perfect colinearity, we will only use vehicle_miles_per_capita in our model development.   
+> We examined the correlation matrix (Figure 6) of the continuously variables to understand correlation between variables.  State population and vehicle miles are almost perfectly correlated. To avoid perfect colinearity (and the reasons stated above in Figure 4), we will only use vehicle_miles_per_capita in our model development.
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.align='center', out.width="85%", echo=FALSE, fig.cap="Pearson Correlation"}
 df %>%
@@ -554,11 +546,11 @@ As with every EDA this semester, the goal of this EDA is not to document your ow
 
 > To summarize our data exploratory work, we noted the following key takeaways:
 
-> 1) We pre-processed the variables in the original dataset, including creating required new variables, cleaning up categorical variables for consistency and renaming all variables with sensible names. Our final dataset in the df file have 25 variables, including index variables (year/year-of-observations and state), the fatality rates variables and the potential explanatory variables (law, economics and demographic variables). We noted 48 states are included in this dataset, which are number 1-51 except for missing state number 2, 9 and 12.
+> 1) We pre-processed the variables in the original dataset, including creating required new variables, cleaning up categorical variables for consistency and renaming all variables with sensible names. Our final dataset in the df file have 25 variables, including index variables (year/year-of-observations and state), the fatality rates variables and the potential explanatory variables (law, economics and demographic variables). We noted 48 states are included in this dataset, which is consistent with the data lable (48 continental states).
 
 > 2) We conducted comprehensive data exploratory work by using extensive plots to visualize and examine the distribution of each variable, relationship between the total fatalities rate and the potential explanatory variables (including the log form of several variables), as well as the correlation among the variables. 
 
-> 3) We noted a declining trend of the average of total fatalities rates over the years, with state-level trend variations.  However, year/time by itself does not fully explain fatalities rates. There are many other factors that affect the total fatalities rates over the years.  We had two key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). We believe that these potential explanatory variables should be included in the subsequent modeling work.
+> 3) We noted a declining trend of the average of total fatalities rates over the years, with state-level trend variations.  However, year/time by itself does not fully explain fatalities rates. There are many other factors that affect the total fatalities rates over the years.  We had three key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). and finally c) the improvement of technology and road conditions over time can cause lower fatalities. We believe that these potential explanatory variables should be included in the subsequent modeling work.
 
 # (15 points) Preliminary Model
 
@@ -578,7 +570,6 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 ```
 
 > As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is. See Appendix 1.5 "Prelim" for summary results.
-
 
 ```{r simple-linear-model, results='hide'}
 mod.lm1 <- lm((total_fatalities_rate) ~ year_of_observation, data = df)
