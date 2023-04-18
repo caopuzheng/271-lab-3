@@ -865,7 +865,11 @@ stargazer(mod.lm1, mod.lm2, mod.fe, re.model,
   se = list(robust_se_exp, robust_se_fe, robust_se_rm),
   omit = c("year_of_observation"),
   column.labels = c("Prelim", "Expand", "Fixed Effects", "Random Effects"),
-  title = "Estimated Models on Total Fatality Rate - Exclude Year Variables (see Appendix 1.5 for the full version)"
+  title = "Estimated Models on Total Fatality Rate - Exclude Year Variables (see Appendix 1.5 for the full version)",
+  column.sep.width = "-15pt",
+  header=FALSE, # to get rid of r package output text,
+  single.row = TRUE, # to put coefficients and standard errors on same line
+  no.space = TRUE # to remove the spaces after each line of coefficients
 )
 ```
 
