@@ -325,7 +325,7 @@ df_avg %>%
     label = round(avg_total_fatalities_rate, 2)
   )) +
   geom_point() +
-  geom_text(hjust = 0, vjust = -0.5, size = 3) +
+  geom_text(hjust = 0, vjust = -0.5, size = 2.5) +
   theme_bw() +
   labs(title = "Average Total Fatalities Rate by Year") +
   xlab("Year") +
@@ -867,7 +867,7 @@ stargazer(mod.lm1, mod.lm2, mod.fe, re.model,
   column.labels = c("Prelim", "Expand", "Fixed Effects", "Random Effects"),
   title = "Estimated Models on Total Fatality Rate - Exclude Year Variables (see Appendix 1.5 for the full version)",
   column.sep.width = "-15pt",
-  header=FALSE, # to get rid of r package output text,
+  header = FALSE, # to get rid of r package output text,
   single.row = TRUE, # to put coefficients and standard errors on same line
   no.space = TRUE # to remove the spaces after each line of coefficients
 )
