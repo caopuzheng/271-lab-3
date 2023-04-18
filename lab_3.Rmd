@@ -80,6 +80,7 @@ To answer this question, please complete the tasks specified below using the dat
 
 Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is also provided in the dataset. 
 ```
+> In order to answer this research question, we loaded and analyzed the 1980-2004 U.S. traffic fatalities panel dataset for 48 states. We conducted comprehensive exploratory data analysis and visually observed the relationship of the potential predictors with traffic fatalities. We also developed several models to estimate the effect of the potential predictors. Based on our study (detailed in the sections below), we believe that changes in traffic laws affect traffic fatalities. The most appropriate model for this panel dataset is the State-level fixed effects model which allow time-invariant state fixed effects to correlate with the other variables in the model.
 
 ```{r load data, echo = TRUE, include = FALSE}
 load(file = "./data/driving.RData")
@@ -98,7 +99,7 @@ load(file = "./data/driving.RData")
     - Produce a new variable for each of the other variables that are one-hot encoded (i.e. `bac*` variable series). 
     - Rename these variables to sensible names that are legible to a reader of your analysis. For example, the dependent variable as provided is called, `totfatrte`. Pick something more sensible, like, `total_fatalities_rate`. There are few enough of these variables to change, that you should change them for all the variables in the data. (You will thank yourself later.)
 ```
-> Check Appendix 1.1 for the code:
+> We performed comprehensive exploratory data analysis of this dataset. Please see Appendix 1.1 for the code details. We summarized the key notes about our data processing work as follows:
 
 ```{r data-processing, include=FALSE}
 # Appendix 1.1
@@ -195,11 +196,12 @@ check_sl65 <- data %>%
 # head(check_sl65, 2)
 ```
 
-> Several notes about our data processing: 
 
-> 1) As noted in the above 2 examples, the original dataset has some percentage values in the sl55/sl65/sl70/s75/slone columns. We expect these columnes to be binary (0, 1). In our data processing, we classified the category based on the field with the max value.  For example, we classified the first example as sl55, and the second example as sl70.
+> 1) We created new variables and renamed variables using sensibel variable names.
 
-> 2) speed_limit_70plus column has values that are not 0 or 1. We reclassified these values to 0 or 1, based on speed_limit column. We als reclassified the states with no speed limit as 1 for this variable at this stage.
+> 2) Some rows of the traffice speed columns (sl55/sl65/sl70/s75/slone) have percentage values. These speed columns are categorical variables and should reflect binary values (0, 1). We classified the percentage values based on the field with the max value.  
+
+> 3) The speed_limit_70plus column has values that are not 0 or 1. We reclassified these values to 0 or 1, based on speed_limit column. We also reclassified the states with no speed limit as 1 in this column.
 
 ```{r data-diagnose-and-cleanup categorical fields, include=FALSE}
 # check the values of these fields
@@ -235,7 +237,7 @@ df <- df %>%
   )
 ```
 
-> 3) We observed non-binary values in the following columns: zero_tolerance_law, graduated_drivers_license_law, per_se_laws. Since we expect these columns to have binary values (0,1) given the definition, we decided to treat all non-zero values as 1 and make it a binary variable.  We also created a binary variable blood_alcohol_limit_binary to set 1 for 0.1 blood_alcohol_limit and 0 for 0.08 blood_alcohol_limit, as there are only two values (0.1 and 0.08) for this variable.
+> 4) We observed non-binary (percentage) values in the three law columns (zero_tolerance_law, graduated_drivers_license_law, per_se_laws). Since we expect these columns to have binary values (0,1), we reclassified all non-zero values as 1 to reflect these fields as binary variables. The minimum_drinking_age column has values that are not integers and we rounded these values to the nearest integer. 
 
 ```{r minimum-drinking-age, include=FALSE}
 # check minimum_drinking_age
@@ -249,7 +251,6 @@ df <- df %>%
   )
 ```
 
-> 4) We noticed that the minimum_drinking_age column has values that are not integers. We decided to round these values to the nearest integer.
 
 ```{r missing-speed-limit, echo=FALSE, include=FALSE}
 # check for na speed_limit rows
@@ -273,9 +274,7 @@ df <- df %>%
   )
 ```
 
-> 5) We observed that the $speed\_limit$ is not set for State 27, between 1996 to 2004. Our background research noted the fact that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. 
-
-> We decided to set the $speed\_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the $speed\_limit$ to 75 for Montana between 2000 to 2004.
+> 5) The $speed\_limit$ is not set for State 27 between 1996 to 2004. Based on our research, we noted that "for three years after the 1995 repeal of the increased 65 mph limit, Montana had a non-numeric "reasonable and prudent" speed limit during the daytime on most rural roads". But it doesn't mean there was no speed limit. We decided to set the $speed\_limit$ to 85 for Montana between 1996 to 1999, given the legal case of [State v. Rudy Stanko (1998)](https://en.wikipedia.org/wiki/Speed_limits_in_the_United_States_by_jurisdiction), who got charged for speed of 85. Effective May 28, 1999, as a result of that decision, the Montana Legislature established a speed limit of 75 mph. So we set the $speed\_limit$ to 75 for Montana between 2000 to 2004.
 
 2. (5 points) Provide a description of the basic structure of the dataset.
 ```{asis, echo=FALSE}
@@ -285,11 +284,15 @@ df <- df %>%
 
 > This data set is a balanced longitudinal dataset and contains traffic fatalities data for the 48 continental U.S. states from 1980 through 2004. For each year of observation, the dataset contains state-level cross sectional measurements of fatality count and rate. This data is collected and distributed by Jeffrey M. Wooldridge through this [link](https://github.com/JustinMShea/wooldridge). In this dataset, the total_fatalities_rate is defined as total fatalities per 100,000 population.	
 
-> After our data processing work, the clean dataset (df) has 25 columns/fields which include:
-- Index variables: year_of_observation, state, year
-- 9 fatality variables: There are three measurements - fatality count, fatality count per 100M miles and fatality rate as defined as count per 100k population. These three measurements are provided for total, nighttime and weekend
-- 10 law and vehicle variables: 8 traffic laws indicators (seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, speed_limit, blood_alcohol_limit) and 2 driving variables (vehicle_miles, vehicle_miles_per_capita)
-- 3 Economics and demographic variables: statepop, unemployment_rate, pct_population_14_to_24
+>  Wooldridge sourced the data from the National Highway Traffic Safety Administration (NHTSA). Since the early 1980s, NHTSA has been obtaining, from various states, computer data files coded from police accident reports.  NHTSA maitains these data files at its National Center for Statistics and Analysis (NCSA). NCSA’s goal is to include all states in the program over time, providing a complete census of national traffic statistics. See this [link](https://onlinelibrary.wiley.com/doi/epdf/10.1111/j.1465-7287.2007.00039.x?saml_referrer=)
+
+> After our data processing work, the clean dataset (df) has 25 columns, see Appendix 1.2. These fields include: 1) index variables (year_of_observation, state, year); 2) nine fatality variables: There are three measurements (fatality count, fatality count per 100M miles and fatality rate). Each measurement is provided for total, nighttime and weekend; 3) eight traffic laws indicators (seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, speed_limit, blood_alcohol_limit), two driving variables (vehicle_miles, vehicle_miles_per_capita), and three economics and demographic variables (statepop, unemployment_rate, pct_population_14_to_24). 
+
+```{r clean-data, include=FALSE}
+# Appendix 1.2
+glimpse(df)
+```
+
 
 3. (20 points) Conduct a very thorough EDA.
 ```{asis, echo=FALSE}
@@ -301,9 +304,9 @@ df <- df %>%
 ```{asis, echo=FALSE}
 - What is the average of `total_fatalities_rate` in each of the years in the time period covered in this dataset? 
 ```
-> See below the table and the plot.
+> We plotted the average of total_fatalities_rate by year in Figure 1 below and noted a declining trend visually.
 
-```{r avg-fatality-by-year, warning=FALSE, fig.align='center', out.width="55%", echo=FALSE, fig.cap="Yearly Average Fatality Rate"}
+```{r avg-fatality-by-year, warning=FALSE, fig.align='center', out.width="55%", echo=FALSE, fig.cap="Average Total Fatalities Rates 1980-2004"}
 df_avg <- df %>%
   group_by(year_of_observation) %>%
   summarise(avg_total_fatalities_rate = mean(total_fatalities_rate))
@@ -335,7 +338,7 @@ df_avg %>%
   ylab("Average Total Fatalities Rate %")
 ```
 
-> Next, check the distribution of the continuous variables. We noted that the distributions of the variables are mostly right-skewed.  
+> Next we examined the histograms of the continuous variables and noted that most of these variables are right-skewed. Data transformation (e.g. log) can be helpful.  
   
 ```{r distribution-plots1, warning=FALSE, message=FALSE, fig.align='center', out.width="55%", echo=FALSE, fig.cap="Continuous Explanatory Variables Distribution"}
 df %>%
@@ -359,9 +362,10 @@ df %>%
 # hist(log(df$pct_population_14_to_24))
 ```
 
-> We also examined the count distribution of the categorical variables.
+> We also examined the distribution of the categorical variables (see Appendix 1.3). We observed: 1) Blood alcohol limit: Most states have the limit of 0.1; 2)Minimum drinking age: Most states have 21; 3) Graduated drivers license law: Most states have 0;4) Speed limit: Most states have less than 70 miles; 5) per-se_laws, seatbelt and zero_tolence_law are more evenly distributed among their categories.
 
-```{r, warning=FALSE, include=FALSE}
+```{r, categorical-variables, warning=FALSE,include=FALSE}
+#Appendix 1.3
 df %>%
   select(
     seatbelt,
@@ -379,18 +383,26 @@ df %>%
   geom_bar()
 ```
 
-> We observed the following distribution for these categorical variables
- - Blood alcohol limit: Most states have the limit of 0.1.
- - Minimum drinking age: Most states have 21.
- - Graduated drivers license law, most states have 0
- - Speed limit: Most states have less than 70 miles
- - per-se_laws, seatbelt and zero_tolence_law are more evenly distributed among the categories
- 
-> We plotted total_fatalities_rate by state below to understand the fixed effects by state 
 
-> We see strong differences in total traffic fatalities rates across states, suggesting that fixed effects are important for controlling for unobserved differences.
+> We plotted total_fatalities_rate by state below to understand the fixed effects by state (see Appendix 1.4). We observed strong differences in total traffic fatalities rates across states, suggesting that fixed effects are important for controlling for unobserved differences.
 
-> We also plotted total_fatalities_rate by state below to understand the trend over the years. 
+```{r, total_fatalities_rate-by-state, warning=FALSE, include=FALSE}
+# Appendix 1.4
+df %>%
+  ggplot(aes(reorder(state, desc(total_fatalities_rate)), total_fatalities_rate,
+    fill = state
+  )) +
+  geom_boxplot(alpha = 0.4) +
+  theme_economist_white(gray_bg = F) +
+  theme(legend.position = "none", axis.text.y = element_text(size = 6)) +
+  scale_y_continuous(label = percent) +
+  xlab("State") +
+  ylab("Total Fatalities Rate%") +
+  coord_flip()
+```
+
+
+> We also plotted total_fatalities_rate by state in Figure 3 to understand the trend over the years. All plots are sequentially ordered, despite of missing state number 2, 9, and 12. Most states have a downward trend in total fatalities rate over the years, with trend variations by state.
 
 ```{r cross-sectional-plot, fig.align='center', out.width="70%", echo=FALSE, fig.cap="Total Fatality Rate by State"}
 # we do have 48 states -> missing states 2, 9, and 12.
@@ -412,15 +424,12 @@ df %>%
   ylab("Total Fatalities Rate %")
 ```
 
-> We noted that the plots are sequentially ordered, despite of missing state number 2, 9, and 12. Most states have a downward trend in total fatalities rate over the years, however there are trend variations by state.
 
-> In the graph below, we explored log transformation on several variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. We visualized both the original and log transformed variables. The log transformation seemed to improve the relationship between the explanatory variable and the respond variable (total fatality rate) visually. Therefore we decided to use log transformation for our interpretation for vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
+> In Figure 4, we compared the original data vs. log-transformed data of several variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. The log transformation seemed to improve the relationship between some of these explanatory variables and total fatality rates. We decided to use log transformation for our interpretation of vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
 
-> Total fatalities rate is positively correlated with unemployment_rate and percentage of population aged 14 through 24.
+> Total fatalities rate is positively correlated with unemployment_rate and percentage of population aged 14 through 24. Total fatalities rate is negatively correlated with vehicle miles and state population which is not intuitive. We interpret this as population and vehicle miles are both increasing with time, so are other potential factors (e.g. quality of the car, technology of the car, road conditions, etc.).  
 
-> Total fatalities rate is negatively correlated with vehicle miles and state population which is not intuitive. We interpret this as population and vehicle miles are both increasing with time, so is the other driving forces of fatalities rate (quality of the car, technology of the car, road conditions, etc.), so the relationship between total fatalities rate vs vehicle miles and state population is potentially spurious, and thus inconsistent with our background knowlege.
-
-> Total fatalities rate is positively correlated with vehicle miles per capita, as what we expect. As the density of the population increases, there is expected to be more severe traffic incidents that leads to higher fatalities rate. This is consistent with our background knowledge. Therefore, it makes sense to use vehicle miles per capita which is normalized for the population. 
+> Total fatalities rate is positively correlated with vehicle miles per capita, as what we expect. As the density of the population increases, there is expected to be more severe traffic incidents that leads to higher fatalities rate. This is consistent with our background knowledge. Therefore, it makes sense to use vehicle miles per capita which catpures vehicle miles normalized for the state population. 
 
 ```{r pairplot-on-feature-of-interest-continuous, fig.align='center', out.width="70%", echo=FALSE, fig.cap="Continous Explanatory Variables Effect on Total Fatality Rate"}
 # TODO: change this to be smaller plot
@@ -474,16 +483,20 @@ df <- df %>%
   )
 ```
 
-> We used boxplots to visually examine the differences in total fatalities rate for the groups within each law categorical variable. We observed that stricter law requirements tend to associate with lower total fatalities rate, see below the detailed comments for each law variable.
+> We used boxplots (Figure 5) to visually examine the differences in total fatalities rate for the groups within each law categorical variable. We observed that stricter law requirements tend to associate with lower total fatalities rate, see below the detailed comments for each law variable.
 
-- Seatbelt: No seatbelt requirements tend to have higher fatalities rate, in comparison to having primary and secondary seatbelt requirements. 
-- For zero_tolerance_law,graduated_drivers_license_law and per_se_laws: 0 (stricter laws) tends to have lower fatalities rate, in comparison to having some level of flexibility/tolerance in law requirements. 
-- minimum_drinking_age: higher legally-eligible age tends to have lower fatalities rate, in comparison to lowering the age legal requirement
-- speed_limit_70plus: below 70 speed limit tends to have lower fatalities rate, in comparison to allowing 70+ speed limit 
-- blood_alcohol_limit: 0.08 blood alcohol limit tends to have have lower fatalities rate, in comparison to 0.1 blood alcohol limit
+> 1) Seatbelt: No seatbelt requirements tend to have higher fatalities rate than primary and secondary seatbelt requirements. 
+
+> 2) For zero_tolerance_law, graduated_drivers_license_law and per_se_laws: 0 (stricter laws) tends to have lower fatalities rate, comparedto having some level of tolerance in law requirements. 
+
+> 3) minimum_drinking_age: Higher legally-eligible age tends to have lower fatalities rate than lower age limit.
+
+> 4) speed_limit_70plus: Below 70 speed limit tends to have lower fatalities rate than those with 70+ speed limit 
+
+> 5) blood_alcohol_limit: 0.08 blood alcohol limit tends to have lower fatalities rate, compared to 0.1 blood alcohol limit
 
 
-```{r pairplot-on-feature-of-interest-discrete, fig.align='center', out.width="70%", warning=FALSE, echo=FALSE, fig.cap="Categorical Variables Effect on Total Fatality Rate"}
+```{r pairplot-on-feature-of-interest-discrete, fig.align='center', out.width="70%", warning=FALSE, echo=FALSE, fig.cap="Categorical Variables' Effect on Total Fatality Rate"}
 df %>%
   select(
     total_fatalities_rate,
@@ -511,7 +524,7 @@ df %>%
   ylab("Total Fatality Rate")
 ```
 
-> We examined the correlation matrix of the continuously variables, so we can eliminate including the explanatory variables with perfect correlation with each other. 
+> We examined the correlation matrix (Figure 6) of the continuously variables to understand correlation between variables. 
 
 ```{r compute-pearson-correlation-confusion-matrix, fig.align='center', out.width="85%", echo=FALSE, fig.cap="Pearson Correlation"}
 df %>%
@@ -543,37 +556,26 @@ df %>%
   )
 ```
 
-> The state population and vehicle miles are almost perfectly correlated. To avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model development. In our exploratory work above, we also noted that state population and vehicle miles seem to have spurious relationship with total fatalities rate, so it makes sense to exclude them in the model.  
+> The state population and vehicle miles are almost perfectly correlated. To avoid the colinearity problem, we will only use vehicle_miles_per_capita in our model development. In our exploratory work above, we also noted that state population and vehicle miles do not have a sensible relationship with total fatalities rate, so it makes sense to exclude them in the model.  
 
 ```{asis, echo=FALSE}
 As with every EDA this semester, the goal of this EDA is not to document your own process of discovery -- save that for an exploration notebook -- but instead it is to bring a reader that is new to the data to a full understanding of the important features of your data as quickly as possible. In order to do this, your EDA should include a detailed, orderly narrative description of what you want your reader to know. Do not include any output -- tables, plots, or statistics -- that you do not intend to write about.
 ```
 
-> To summarize our data exploratory work (as detailed in the above plots and comments), we noted the following key takeaways:
+> To summarize our data exploratory work, we noted the following key takeaways:
 
-- 1) We pre-processed the variables in the original dataset, including creating required new variables, cleaning up categorical variables for consistency and renaming all variables with sensible names. Our final dataset in the df file have 25 variables, including index variables (year/year-of-observations and state), the fatality rates variables and the potential explanatory variables (law, economics and demographic variables). We noted 48 states are included in this dataset, which are number 1-51 except for missing state number 2, 9 and 12.
+> 1) We pre-processed the variables in the original dataset, including creating required new variables, cleaning up categorical variables for consistency and renaming all variables with sensible names. Our final dataset in the df file have 25 variables, including index variables (year/year-of-observations and state), the fatality rates variables and the potential explanatory variables (law, economics and demographic variables). We noted 48 states are included in this dataset, which are number 1-51 except for missing state number 2, 9 and 12.
 
-- 2) We conducted comprehensive data exploratory work by using extensive plots to visualize and examine the distribution of each variable, relationship between the total fatalities rate and the potential explanatory variables (including the log form of several variables), as well as the correlation among the variables. 
+> 2) We conducted comprehensive data exploratory work by using extensive plots to visualize and examine the distribution of each variable, relationship between the total fatalities rate and the potential explanatory variables (including the log form of several variables), as well as the correlation among the variables. 
 
-- 3) Based on our exploratory work, we noted a declining trend of the average of total fatalities rates over the period, with trend variations at the state level.  However, that does not mean time by itself caused the fatalities to go down, based on our experience. There could be many other factors that caused the total fatalities rates to go down over the years.  We had two key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). These observations provide important insight and guidance to our subsequent modeling work.
+> 3) Based on our exploratory work, we noted a declining trend of the average of total fatalities rates over the period, with trend variations at the state level.  However, that does not mean time by itself caused the fatalities to go down, based on our experience. There could be many other factors that caused the total fatalities rates to go down over the years.  We had two key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). These observations provide important insight and guidance to our subsequent modeling work.
 
 # (15 points) Preliminary Model
+
 ```{asis, echo=FALSE}
 Estimate a linear regression model of *totfatrte* on a set of dummy variables for the years 1981 through 2004 and interpret what you observe. In this section, you should address the following tasks: 
 
 > Please see below the linear model summary and residual diagnostic analysis.
-```
-
-```{r simple-linear-model, results='hide'}
-mod.lm1 <- lm((total_fatalities_rate) ~ year_of_observation, data = df)
-```
-
-```{r, results='hide'}
-coeftest(mod.lm1, vcov. = vcovHC, type = "HC1")
-```
-
-```{r lm-residuals, echo=FALSE, fig.align='center', out.width="60%", fig.cap="Linear Model Residuals"}
-forecast::checkresiduals(mod.lm1)
 ```
 
 ```{asis, echo=FALSE}
@@ -584,19 +586,31 @@ forecast::checkresiduals(mod.lm1)
     - Are the parameter estimates reliable, unbiased estimates of the truth? Or, are they biased due to the way that the data is structured?
 - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured?
 ```
-> As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is.
 
-> As noted above, we expect the fatalities rate to decline over the years given our EDA observations. This model shows whether a given year has a linear relationship with total fatalities rate, with Year 1980 as the base value in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable in this model. 
+> As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is. See Appendix 1.5 "Prelim" for summary results.
 
-> As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time by itself does not necessarily have a causal effect on the fatalities rates. There are many other factors (e.g. law and economics/demographic variables) that could explain the changes in total fatalities rates over the period, as we summarized as the key take-aways in the last part of our EDA section.
 
-> Based on the residual diagnostic analysis and plots, the residuals have large fluctuations for each year and are not constant with zero mean expectation. This violates one of the key classical linear model assumptions - linear conditional mean. So the parameter estimates are biased and not reliable.
+```{r simple-linear-model, results='hide'}
+mod.lm1 <- lm((total_fatalities_rate) ~ year_of_observation, data = df)
+```
 
-> The parameter estimates are biased because the model recognizes year as the sole explanatory variable for the total fatalities rate.  This introduces omitted variable bias because we have not accounted for other factors such as law, economics and demographic explanatory variables, as we discussed in the EDA section. 
+```{r, results='hide'}
+coeftest(mod.lm1, vcov. = vcovHC, type = "HC1")
+```
 
-> In our residual analysis above, the residuals' distribution is not normal. variance is not constant (heteroskedasticity issues). The Breusch-Godfrey test for serial correlation has a p-value much less than 0.05. There is strong evidience of serial correlation in the model residuals. The ACF plot shows significant positive autocorrelation of many lags. With positive serial correlation, the standard errors (uncertain estimate of our parameter coefficients) are understated and the statistical inferences are not reliable.
+```{r lm-residuals, echo=FALSE, fig.align='center', out.width="50%", fig.cap="Linear Model Residuals"}
+forecast::checkresiduals(mod.lm1)
+```
 
-> We pulled heteroskedasticity-robust standard errors using coeftest(mod.lm1, vcov. = vcovHC, type = "HC1") above. The HC errors are higher than the standard error (1.2263) reported in the linear model. This dataset is structured by state and each state has 25 rows representing 25 years. Using this data structure and year as the sole variable, this model has omitted variables bias as noted above. 
+> We expected the total fatalities rate to decline over the years given our EDA observations. This model shows whether a given year has a linear relationship with total fatalities rate, with 1980 as the base year in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable in this model. 
+
+> As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time by itself does not necessarily cause changes in the fatalities rates. Many other factors (e.g. changes in law, economics and demographics, and technology) could explain the changes in total fatalities rates over the period, as noted in the summary notes of the above EDA section.
+
+> Model residuals have large fluctuations for each year and are not constant with zero mean expectation. This violates one of the key classical linear model assumptions - linear conditional mean. The parameter estimates are biased and not reliable. The parameter estimates are biased because the model recognizes year as the sole explanatory variable for the total fatalities rate.  This introduces omitted variable bias because we have not accounted for other factors such as law, economics and demographic explanatory variables. 
+
+> Model residuals' distribution is not normal. variance is not constant (heteroskedasticity issues). The Breusch-Godfrey test for serial correlation has a p-value much less than 0.05. There is strong evidience of serial correlation in the model residuals. The ACF plot shows significant positive autocorrelation of many lags. With positive serial correlation, the standard errors (uncertain estimate of our parameter coefficients) are understated and the statistical inferences are not reliable.
+
+> We pulled heteroskedasticity-robust standard errors using coeftest(mod.lm1, vcov. = vcovHC, type = "HC1") above. The HC errors are higher than the standard errors reported in the linear model. This dataset is structured by state and each state has 25 rows representing 25 years. Using this data structure and year as the sole variable, this model has omitted variables bias as noted above. 
    
 # (15 points) Expanded Model 
 ```{asis, echo=FALSE}
@@ -616,13 +630,9 @@ Expand the **Preliminary Model** by adding variables related to the following co
 If it is appropriate, include transformations of these variables. Please carefully explain carefully your rationale, which should be based on your EDA, behind any transformation you made. If no transformation is made, explain why transformation is not needed.
 ```
 
-> In the EDA section, we included detailed codes and explanation of our data pre-processing work, in order to clean up and standardize our variables to prepare for our exploratory work and model development. 
+> In the EDA section, we performed data processing work, and examined the histogram of the continuous variables. We noted right-skewness in the distribution and applied the log transformation to total_fatalities_rate, unemployment_rate, and vehicle miles per capita to normalize the distribution. 
 
-> We also applied the log transformation to total_fatalities_rate, unemployment_rate, and vehicle miles per capita to normalize the distribution given the original skewed distribution. 
-
-> In the summary take-aways part of our EDA section (the last part of EDA), we included the set of key variables that can explain total fatalities rate, which assign with the variables that we are instructed to use in this expanded model.
-
-- Below is the result of the expanded model (mod.lm2).
+> In the summary notes of our EDA section, we included the set of key variables that can explain total fatalities rate, which assign with the variables that we will use in the expanded model. See the summary model results in Appendix 1.5 and Table 1 in the sections below.
 
 ```{r}
 mod.lm2 <- lm(
@@ -639,22 +649,22 @@ mod.lm2 <- lm(
 )
 ```
 
-> Looking at the coefficients estimates, all the years coefficients are negative, which aligns with our EDA observations. However, some of the coefficients have unintuitive signs and not aligned with our EDA work and our experience. For example, seatbelt 2 (secondary seatbelt) has a positive coefficient compared to no seatbelt requirement, which is not sensible. unemployment_rate_log has a positive coefficient, which is not what we expect as well.
+> The coefficients estimates for all years are negative, which aligns with our EDA observations. However, a few variables have unintuitive signs and not aligned with our EDA work. For example, seatbelt 2 (secondary seatbelt) has a positive coefficient compared to no seatbelt requirement, which is not sensible. unemployment_rate_log has a positive coefficient, which is not what we expect.
 
-> We analyzed the model residuals below
+> Figure 8 shows the model residuals analysis.
 
-```{r expanded-lm-residuals, echo=FALSE, fig.align='center', out.width="60%", fig.cap="Expanded Linear Model Residuals"}
+```{r expanded-lm-residuals, echo=FALSE, fig.align='center', out.width="50%", fig.cap="Expanded Linear Model Residuals"}
 forecast::checkresiduals(mod.lm2)
 ```
 
-> The model residuals improved over the prelimary linear model version based on the plots. The Normal Q-Q plot is closer to the normal distribution, better than the preliminary linear model. However, the residuals still have a lot of variance fluctuations, and serial correlation is a major problem based on the Breusch-Godfrey test and the ACF plot. Serial correlation makes standard error estimates and statistical inferences not reliable. 
-
-> We will need to use robust standard errors.
+> The model residuals improved over the prelimary linear model based on the plots. The Normal Q-Q plot is closer to the normal distribution, better than the preliminary linear model. However, the residuals still have a lot of variance fluctuations, and serial correlation is a major problem based on the Breusch-Godfrey test and the ACF plot. Serial correlation makes standard error estimates and statistical inferences not reliable. We need to use robust standard errors.
 
 ```{r, results='hide'}
 # use the robust standard errors
 coeftest(mod.lm2, vcov. = vcovHC, type = "HC1")
 ```
+
+> We evaluated three law variables below. 
 
 - How are the blood alcohol variables defined? Interpret the coefficients that you estimate for this concept. 
 
@@ -663,53 +673,52 @@ coeftest(mod.lm2, vcov. = vcovHC, type = "HC1")
 blood_alcohol_limit0.08_coef <- mod.lm2$coefficients[26]
 
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
-# Since the response variable is the log form of the total fatalities rate
+# Since the total fatalities rates are log-transformed
 # we will take the exponent of the coefficient to get the effect
-exp(blood_alcohol_limit0.08_coef) - 1
+round(exp(blood_alcohol_limit0.08_coef) - 1,4)
 ```
 
 > Every state in the United States has laws making it illegal to operate a motor vehicle while under the influence of alcohol. In each state, the blood alcohol content (BAC) has a legal limit of 0.08% or 0.1% for ordinary, non-commercial vehicles. In this dataset, blood_alcohol_limit variable represents the BAC legal limit for each state, either 0.1 and 0.08. 
 
-> In this model version, blood_alcohol_limit  of 0.1 is the default value for the base model. The estimated coefficient on *blood alcohol limit 0.08* is -4.6% and significantly different from zero at 5%. The interpretation of this coefficent is that changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower. 
+> In this model version, blood_alcohol_limit  of 0.1 is the default value for the base model. The estimated coefficient on *blood alcohol limit 0.08* is -0.045 and significantly different from zero at 5%. The interpretation of this coefficent is that changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower. 
 
 - Do *per se laws* have a negative effect on the fatality rate? 
 
-```{r, results='hide'}
+```{r, echo=FALSE}
 # coefficient of per_se_laws
 per_se_laws_coef <- mod.lm2$coefficients[27]
 
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
 # Since the response variable is the log form of the total fatalities rate, 
 # we will take the exponent of the coefficient to get the effect
-exp(per_se_laws_coef) - 1
+round(exp(per_se_laws_coef)-1,4)
 ```
 
 
-> The estimated coefficient on *per se laws* is -0.022. The negative coefficient aligns with our EDA observation). However, this coefficient is not significantly different from zero. This is a surprise, as we expect per se laws to have a meaningful impact on the total fatalities rate. 
+> The estimated coefficient on *per se laws* is -0.022. The negative sign aligns with our EDA work. However, this coefficient is not significantly different from zero. This is a surprise, as we expect per se laws to have a meaningful impact on the total fatalities rate. The interpretation is that changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17%. However, this effect is not statistically significant in this model.
 
-> Its interpretation is that changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17%, however, this effect is not statistically significant in this model.
 
 - Does having a primary seat belt law?
 
-```{r, results='hide'}
+```{r, echo=FALSE}
 # coefficient of primary seat belt
 seatbelt1_coef <- mod.lm2$coefficients[29]
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
 # Since the response variable is the log form of the total fatalities rate, 
 # we will take the exponent of the coefficient to get the effect
-exp(seatbelt1_coef) - 1
+exp(seatbelt1_coef)-1
 ```
 
-> The estimated coefficient on *primary seatbelt laws* (seatbelt1) is negative (-0.0006714598). The negative sign aligns with our EDA observation, but is not significantly different from zero in this model. This is a surprise, as we expect primary seatbelt law requiremnets to have a material impact on the total fatalities rate. 
-
-> Its interpretation is that changing the seatbelt law from no requirement to primary requirement will cause traffic fatalities rate to decrease marginally (0.067%), not statistically or practically significant. 
+> The estimated coefficient on *primary seatbelt laws* (seatbelt1) is negative (-0.00067). The negative sign aligns with our EDA observation, but is not significantly different from zero in this model. This is a surprise, as we expect primary seatbelt law requiremnets to have a material impact on the total fatalities rate. Its interpretation is that changing the seatbelt law from no requirement to primary requirement will cause traffic fatalities rate to decrease marginally (0.067%), not statistically or practically significant. 
 
 # (15 points) State-Level Fixed Effects 
 
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
-```{r, results='hide'}
+> We used the same set of variables in the **Expanded Model** and added factor(state) to account for state fixed effect in the State-level fixed effects model.
+
+```{r, results='hide', echo=TRUE}
 # estimate the fixed effects regression with plm()
 mod.fe <- plm(
   log(total_fatalities_rate) ~ year_of_observation
@@ -729,59 +738,62 @@ mod.fe <- plm(
 )
 
 # summary(mod.fe)
-# print summary using robust standard errors
-coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
+
 ```
 
 ```{r, results='hide'}
+coeftest(mod.fe, vcov. = vcovHC, type = "HC1")
+```
+
+```{r, echo=FALSE}
 # coefficient of blood_alcohol_limit0.08
 blood_alcohol_limit0.08_coef_fe <- mod.fe$coefficients[25]
 
 # The effect on the total fatalities rate, if changing blood_alcohol_limit from 0.1% to 0.08%
 # Since the response variable is the log form of the total fatalities rate, 
 # we will take the exponent of the coefficient to get the effect
-exp(blood_alcohol_limit0.08_coef_fe) - 1
+round(exp(blood_alcohol_limit0.08_coef_fe) - 1, 4)
 ```
 
-
 - What do you estimate for coefficients on the blood alcohol variables? How do the coefficients on the blood alcohol variables change, if at all? 
-> In this State-level fixed effects model, the estimated coefficient on blood alcohol limit 0.08 is -0.0236, less negative than the estimated coefficient of -0.045924 in the expanded linear model (mod.lm2). 
+
+> In this State-level fixed effects model, the estimated coefficient on blood alcohol limit 0.08 is -0.0048883, much less negative than the estimated coefficient of -0.045 in the expanded model (mod.lm2). 
 
 > Additionally, the expanded linear model (mod.lm2) showed that this variable is statistically significant, but the State-level fixed effects model shows that this variable's coefficient is not significantly different from zero using the robust standard errors.
 
-> Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease marginally by 2.3%, which is less than the 4.4% decrease estimated by the expanded liniear model.  
+> Its interpretation is that changing the blood alcohol limit from 0.10% to 0.08% causes traffic fatalities rate to decrease marginally by 0.49%, which is less than the 4.4% decrease estimated by the expanded liniear model.  
 
 - What do you estimate for coefficients on per se laws? How do the coefficients on per se laws change, if at all? 
 
-```{r, results='hide'}
+```{r, results='hide', echo=FALSE}
 # coefficient of per_se_laws
 per_se_laws_coef_fe <- mod.fe$coefficients[26]
 
 # The effect on the total fatalities rate, if per_se_laws from 0 to 1
 # Since the response variable is the log form of the total fatalities rate, 
 # we will take the exponent of the coefficient to get the effect
-exp(per_se_laws_coef_fe) - 1
+round(exp(per_se_laws_coef_fe) - 1,  4)
 ```
 
-> The estimated coefficient on *per se laws* is -0.086 and significantly different from zero at 0% significance level, using the robust standard errors. In the prior expanded linear model (mod.lm2), this variable has a coefficient of -0.022 and was not statistically significant.
+> The estimated coefficient on *per se laws* is -0.055 and significantly different from zero at 0% significance level, using the robust standard errors. In the prior expanded linear model (mod.lm2), this variable has a coefficient of -0.022 and was not statistically significant.
 
-> Its interpretation is that change per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 8.2%. This is significant both statistically and practically. Compared to the expanded model, the impact magnitude of per se laws estimated by the fixed effects model is much larger and is sensible.
+> Its interpretation is that change per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 5.4%. This is significant both statistically and practically. Compared to the expanded model, the impact magnitude of per se laws estimated by the fixed effects model is much larger and is sensible.
 
 - What do you estimate for coefficients on primary seat-belt laws? How do the coefficients on primary seatbelt laws change, if at all? 
 
-```{r, results='hide'}
+```{r, results='hide', echo=FALSE}
 # coefficient of primary seat belt
 seatbelt1_coef_fe <- mod.fe$coefficients[28]
 
 # The effect on the total fatalities rate, if changing seatbelt law from none to primary
 # Since the response variable is the log form of the total fatalities rate, 
 # we will take the exponent of the coefficient to get the effect
-exp(seatbelt1_coef_fe) - 1
+round(exp(seatbelt1_coef_fe) - 1, 4)
 ```
 
-> The estimated coefficient on *primary seatbelt laws* is -0.09 and has strong evidence that it is difference from zero at 0.05% significance level, using the robust standard errors. The prior expanded model (mod.lm2) noted that this variable was not statistically significant, which was not aligned with our experience. 
+> The estimated coefficient on *primary seatbelt laws* is -0.041 and has strong evidence that it is difference from zero at 0.05% significance level (using standard errors) but not significant using the robust standard errors. The prior expanded model (mod.lm2) estimated a much less coefficient.
 
-> Its interpretation is that chaning seatbelt law requirement from none to primary will cause traffic fatalities rate to decrease by 8.7%, which is significant both statistically and practically. This effect makes much more sense than the marginal effect estimated by the expanded model.  
+> Its interpretation is that chaning seatbelt law requirement from none to primary will cause traffic fatalities rate to decrease by 4.1%. This effect makes larger than the marginal effect estimated by the expanded model.  
 
 Which set of estimates do you think is more reliable? Why do you think this?
 
@@ -795,31 +807,29 @@ forecast::checkresiduals(mod.fe)
 
 > Variance fluctulations are much improved compared to the linear models. The ACF plot for the model residuals shows autocorrelation but decays quickly (this is much improved compared to the significant but non-decaying autocorrelation in the expanded model). We used the robust standard errors to account for the group heteroskedasticity and serial correlation by allowing correlation across time in groups.  
 
-> Based on the residuals analysis, the State-level Fixed Effects model will generate more reliable estimates than the linear models. 
-
-> Also, the parameter estimates' sign and magnitude in the State-level Fixed Effects model make much sense than the expanded model, based on our EDA work and our experience. 
+> Based on the residuals analysis, the State-level Fixed Effects model will generate more reliable estimates than the linear models. Also, the parameter estimates' sign and magnitude in the State-level Fixed Effects model make much sense than the expanded model, based on our EDA work and our experience. 
 
 - What assumptions are needed in each of these models?
 
 > Fixed Effect Model Assumptions:
 
-- **Linearity**: the model is linear in parameters
+> 1) **Linearity**: the model is linear in parameters
 
-- **i.i.d.** : The observations are independent across individual states but not necessarily across time. This is guaranteed through random sampling.
+> 2) **i.i.d.** : The observations are independent across individual states but not necessarily across time. This is guaranteed through random sampling.
 
-- **Indentifiability**: the regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values. 
+> 3) **Indentifiability**: the regressors, including a constant, are not perfectly collinear, and all regressors (but the constant) have non-zero variance and not too many extreme values. 
 
-- **Zero conditional means (strict exogeneity)**  
+> 4) **Zero conditional means (strict exogeneity)**  
 
 - Are these assumptions reasonable in the current context?
 
-- **Linearity**: This assumption is met since each of the explanatory variable is shown to have a linear relationship with the response variable in the models.
+> 1) **Linearity**: This assumption is met since each of the explanatory variable is shown to have a linear relationship with the response variable in the models.
 
-- **i.i.d.** : This assumption is met since the cross-sectional variables measured across state/year on a randomized population. Since we have 48 different states, we assume that each state has independent legislative procedures and has the state-specific economics and demographic situations. 
+> 2)  **i.i.d.** : This assumption is met since the cross-sectional variables measured across state/year on a randomized population. Since we have 48 different states, we assume that each state has independent legislative procedures and has the state-specific economics and demographic situations. 
 
-- **Indentifiability**: In our EDA work, we excluded the variables that have perfect collinearity. Also any variables with perfect collinearity would be dropped out from the model. So this condition is met. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme values in the explanatory variables. Therefore, this condition is met.
+> 3) **Indentifiability**: In our EDA work, we excluded the variables that have perfect collinearity. Also any variables with perfect collinearity would be dropped out from the model. So this condition is met. Using robust standard error on the fitted model, each explanatory variables resulted in a less than 1 standard deviation, which, upon raising it to the power of two, resulted in low non-zero variance. This suggests there are not too many extreme values in the explanatory variables. Therefore, this condition is met.
 
--**Zero conditional means (strict exogeneity)**: Since we're using within estimator to fit a fixed effect model on the state, the effect of unobserved individual heterogeneity is eliminated. Thus this condition is met by the State-level Fixed Effect Model. This condition is not met by the two linear models.
+> 4) **Zero conditional means (strict exogeneity)**: Since we're using within estimator to fit a fixed effect model on the state, the effect of unobserved individual heterogeneity is eliminated. Thus this condition is met by the State-level Fixed Effect Model. This condition is not met by the two linear models.
 
 
 # (10 points) Consider a Random Effects Model 
@@ -829,9 +839,7 @@ Instead of estimating a fixed effects model, should you have estimated a random 
 
 - Please state the assumptions of a random effects model, and evaluate whether these assumptions are met in the data. 
 
-> Random Effect Model Assumptions:
-- All assumptions under Fixed Effect model
-- The unobservbed effect term ai is independent of all explanatory variables in all the time periods in the model
+> Random Effect Model Assumptions: All assumptions under Fixed Effect model. Additionally, the unobservbed effect term $a_{i}$ is independent of all explanatory variables in all the time periods in the model
 
 - If the assumptions are, in fact, met in the data, then estimate a random effects model and interpret the coefficients of this model. Comment on how, if at all, the estimates from this model have changed compared to the fixed effects model. 
 
@@ -866,6 +874,10 @@ phtest(mod.fe, re.model)
 
 ```{r, expand-fixed-random-comparison, results='asis', message=FALSE, warning=FALSE, echo=FALSE}
 # calculate the robust standard errors for the models
+
+cov_pre <- vcovHC(mod.lm1, type = "HC1")
+robust_se_pre <- sqrt(diag(cov_pre))
+
 cov_exp <- vcovHC(mod.lm2, type = "HC1")
 robust_se_exp <- sqrt(diag(cov_exp))
 
@@ -876,13 +888,13 @@ cov_rm <- vcovHC(re.model, type = "HC1")
 robust_se_rm <- sqrt(diag(cov_rm))
 
 # compare the three models, show robust standard errors in the comparison
-stargazer(mod.lm2, mod.fe, re.model,
+stargazer(mod.lm1, mod.lm2, mod.fe, re.model,
   type = "latex",
   omit.stat = c("adj.rsq", "f"),
   se = list(robust_se_exp, robust_se_fe, robust_se_rm),
   omit = c("year_of_observation"),
-  column.labels = c("expand model", "Fixed Effects", "Random Effects"),
-  title = "Estimated Models on Total Fatality Rate"
+  column.labels = c("Prelim", "Expand", "Fixed Effects", "Random Effects"),
+  title = "Estimated Models on Total Fatality Rate - Exclude Year Variables (see Appendix 1.5 for the full version)"
 )
 ```
 
@@ -1033,27 +1045,38 @@ pbgtest(mod.fe, order = 2)
 
 # Appendix
 
+> **Appendix 1.1**
+
 ```{r data-processing2, ref.label='data-processing', echo=TRUE}
 ```
 
-```{r, warning=FALSE, echo=FALSE}
-# Appendix 1.3
-df %>%
-  ggplot(aes(reorder(state, desc(total_fatalities_rate)), total_fatalities_rate,
-    fill = state
-  )) +
-  geom_boxplot(alpha = 0.4) +
-  theme_economist_white(gray_bg = F) +
-  theme(legend.position = "none", axis.text.y = element_text(size = 6)) +
-  scale_y_continuous(label = percent) +
-  xlab("State") +
-  ylab("Total Fatalities Rate%") +
-  coord_flip()
-```
+\newpage
+> **Appendix 1.2**
 
-```{r, expand-fixed-random-comparison-full, results='asis', message=FALSE, warning=FALSE, echo=TRUE}
-# Appendix 5.1
+```{r clean-data2, ref.label='clean-data', echo=TRUE}
+
+```
+\newpage
+> **Appendix 1.3**
+
+```{r, categorical-variables2, ref.label='categorical-variables', echo=TRUE}
+
+```
+\newpage
+> **Appendix 1.4**
+
+```{r, total_fatalities_rate-by-state2, ref.label='total_fatalities_rate-by-state', echo=TRUE}
+
+```
+\newpage
+> **Appendix 1.5**
+
+```{r, expand-fixed-random-comparison-full, results='asis', message=FALSE, warning=FALSE, echo=FALSE}
+# Appendix 1.5
 # calculate the robust standard errors for the models
+cov_pre <- vcovHC(mod.lm1, type = "HC1")
+robust_se_pre <- sqrt(diag(cov_pre))
+
 cov_exp <- vcovHC(mod.lm2, type = "HC1")
 robust_se_exp <- sqrt(diag(cov_exp))
 
@@ -1064,11 +1087,11 @@ cov_rm <- vcovHC(re.model, type = "HC1")
 robust_se_rm <- sqrt(diag(cov_rm))
 
 # compare the three models, show robust standard errors in the comparison
-stargazer(mod.lm2, mod.fe, re.model,
+stargazer(mod.lm1, mod.lm2, mod.fe, re.model,
   type = "latex",
   omit.stat = c("adj.rsq", "f"),
-  se = list(robust_se_exp, robust_se_fe, robust_se_rm),
-  column.labels = c("expand model", "Fixed Effects", "Random Effects"),
+  se = list(robust_se_pre, robust_se_exp, robust_se_fe, robust_se_rm),
+  column.labels = c("Prelim", "Expand", "Fixed Effects", "Random Effects"),
   title = "Estimated Models on Total Fatality Rate"
 )
 ```
