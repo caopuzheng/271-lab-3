@@ -993,9 +993,9 @@ beta <- tail(mod.fe$coefficients, 1)
 (1 - 0.391)^beta - 1
 ```
 
-> Holding other factors constant, if vehicle miles per capita increases by 5.0%, the traffic fatalities rate would increase by 0.83% (or become 99.17% as large), compared with before COVID levels.
+> Holding other factors constant, if vehicle miles per capita increases by 5.0%, the traffic fatalities rate would increase by 3.3% (or become 1.033 times as large), compared with before COVID levels.
 
-> Holding other factors constant, if vehicle miles per capita decreases by 39.1%, the traffic fatalities rate would decrease by 8.13% (or become 92.87% as large), compared with before COVID levels. Althought we should be cautious here: the change in miles driven per capita is very large, so the log transformation interpretation might not generate a good estimation in this case.
+> Holding other factors constant, if vehicle miles per capita decreases by 39.1%, the traffic fatalities rate would decrease by 28.19% (or become 71.81% as large), compared with before COVID levels. Althought we should be cautious here: the change in miles driven per capita is very large, so the log transformation interpretation might not generate a good estimation in this case.
 
 # (5 points) Evaluate Error 
 
