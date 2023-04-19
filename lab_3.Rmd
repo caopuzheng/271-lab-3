@@ -863,7 +863,7 @@ stargazer(mod.lm1, mod.lm2, mod.fe, re.model,
   se = list(robust_se_exp, robust_se_fe, robust_se_rm),
   omit = c("year_of_observation"),
   column.labels = c("Prelim", "Expand", "Fixed Effects", "Random Effects"),
-  title = "Estimated Models on Total Fatality Rate - Exclude Year Variables (see Appendix 1.5 for the full version)",
+  title = "Estimated Models on Total Fatality Rate - Exclude Year Variables (See Appendix 1.5 for full list)",
   column.sep.width = "-10pt",
   header = FALSE, # to get rid of r package output text,
   single.row = TRUE, # to put coefficients and standard errors on same line
@@ -879,7 +879,9 @@ stargazer(mod.lm1, mod.lm2, mod.fe, re.model,
 
 > Given the Hausman test result, the random effects model is also not likely to be efficient, which means its variance would not be minimum or stable causing the standard errors to be biased and test statistics to be not reliable. 
 
-> From a practical perspective, fixed effects models are relatively straighforward. Random effects models require additional mathematical assumptions with added-complexity, which strenthens the argument of not using the random effects model in this case.
+> From a practical perspective, fixed effects models are relatively straighforward. Random effects models require additional mathematical assumptions with added-complexity, which strenthens the argument of not using the random effects model in this case. 
+
+> This is especially true because there is no time invariant explanatory variables in our model, so the biggest advantage of the random effects model (being able to estimate the impacts of time-invariant explanatory variables)  is not applicable here.
 
 # (10 points) Model Forecasts 
 ```{asis, echo=FALSE}
@@ -960,7 +962,7 @@ ggplot() +
 
 > Figure 6 shows that new vehicle milage data is similar to the old data. The average difference between the two data is marginal (0.8%). This difference is expected as the new vehicle miles data from Bloomberg includes 51 states, while the old data only includes 48 states. We believe that the new data is appropriate to use in our analysis.
 
-> The largest decrease in driving during COVID bust is in April 2020 (-39.1% compared with April 2018), and the largest increase in driving post-COVID boom is in September 2022 (+5.0% compared with January 2018), which is technically before COVID.
+> The largest decrease in driving during COVID bust is in April 2020 (-39.1% compared with April 2018), and the largest increase in driving post-COVID boom is in September 2022 (+5.0% compared with January 2018). We didn't consider January and February in 2020 because COVID hasn't started yet then.
 
 ```{r monthly-miles-driven-covid-change, fig.align='center', out.width="45%", echo=FALSE}
 vehicle_miles_month %>%
@@ -981,16 +983,19 @@ vehicle_miles_month %>%
 
 Now, use these changes in driving to make forecasts from your models. 
 - Suppose that the number of miles driven per capita, increased by as much as the COVID boom. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
-```
 
-#TODO: add the new beta values below
-> Holding other factors constant, if vehicle miles per capita increases by 5.0%, the traffic fatalities rate would increase by $5% * \beta = 3.8%$.
-
-```{asis, echo=FALSE}
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 ```
 
-> Holding other factors constant, if vehicle miles per capita decreases by 39.1%, the traffic fatalities rate would increase by $-39.1% * \beta = -29.5%$. We should be cautious here since the change in miles driven per capita is very large, so the log transformation interpretation might not be accurate.
+```{r estimate-the-impact-of-covid}
+beta <- tail(mod.fe$coefficients, 1)
+(1 + 0.05)^beta - 1
+(1 - 0.391)^beta - 1
+```
+
+> Holding other factors constant, if vehicle miles per capita increases by 5.0%, the traffic fatalities rate would increase by 0.83% (or become 99.17% as large), compared with before COVID levels.
+
+> Holding other factors constant, if vehicle miles per capita decreases by 39.1%, the traffic fatalities rate would decrease by 8.13% (or become 92.87% as large), compared with before COVID levels. Althought we should be cautious here: the change in miles driven per capita is very large, so the log transformation interpretation might not generate a good estimation in this case.
 
 # (5 points) Evaluate Error 
 
@@ -1003,7 +1008,6 @@ pcdtest(mod.fe, test = "lm")
 ```{r serial-correlation-test, results=FALSE}
 pbgtest(mod.fe, order = 2)
 ```
-
 
 > If there is serial correlation or heteroskedasticity in the idiosyncratic errors of the model, the standard errors or uncertainty of the estimators will be underestimated and statistical inferences are not reliable. However, serial correlation does not cause bias in the regression coefficient estimates of the estimators. 
 
