@@ -325,7 +325,10 @@ df_avg %>%
     label = round(avg_total_fatalities_rate, 2)
   )) +
   geom_point() +
-  geom_text(hjust = 0, vjust = -0.5, size = 2.5) +
+  geom_text(
+    hjust = 0, vjust = -0.5, size = 2.5
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
   theme_bw() +
   labs(title = "Average Total Fatalities Rate by Year") +
   xlab("Year") +
@@ -1012,6 +1015,8 @@ pbgtest(mod.fe, order = 2)
 > In this case, when we apply the Breusch Pagan Test on homoskedasticity to the FE model, we obtained a p-value of 2.2e-16, which is significantly less than 0.05, suggesting that there is sign of heteroskedasticity from the idiosyncratic errors. We also performed the Breusch-Godfrey test for serial correlation and obtained a p-value of 2.2e-16, which is significantly less than 0.05, suggesting that we have do have serially correlation in idiosyncratic errors. In the ACF plot, we can also visually detect the autocorrelation in the model residuals. 
 
 > Therefore, the FE model has serial correlation issues and standard errors are underestimated. We should use the robust standard errors to address heteroskedasticity and serial correlation issues by allowing correlation across time in groups.
+
+\newpage
 
 # Appendix
 
