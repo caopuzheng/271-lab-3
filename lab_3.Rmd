@@ -328,8 +328,9 @@ df_avg %>%
   geom_text(
     hjust = 0, vjust = -0.5, size = 2.5
   ) +
+  #theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-  theme_bw() +
+
   labs(title = "Average Total Fatalities Rate by Year") +
   xlab("Year") +
   ylab("Average Total Fatalities Rate %")
