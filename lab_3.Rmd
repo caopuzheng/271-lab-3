@@ -80,7 +80,7 @@ To answer this question, please complete the tasks specified below using the dat
 
 Specifically, this data set contains data for the 48 continental U.S. states from 1980 through 2004. Various driving laws are indicated in the data set, such as the alcohol level at which drivers are considered legally intoxicated. There are also indicators for “per se” laws—where licenses can be revoked without a trial—and seat belt laws. A few economics and demographic variables are also included. The description of the each of the variables in the dataset is also provided in the dataset. 
 ```
-> In order to answer this research question, we loaded and analyzed the 1980-2004 U.S. traffic fatalities panel dataset for 48 states. We conducted comprehensive exploratory data analysis and visually observed the relationship of the potential predictors with traffic fatalities. We also developed several models to estimate the effect of the potential predictors. Based on our study (detailed in the sections below), we believe that changes in traffic laws affect traffic fatalities. The most appropriate model for this panel dataset is the State-level fixed effects model which allow time-invariant state fixed effects to correlate with the other variables in the model.
+> In order to answer this research question, we analyzed the 1980-2004 U.S. traffic fatalities panel dataset for 48 states. We conducted comprehensive exploratory data analysis and visually observed the relationship of the potential predictors with traffic fatalities. We also developed several models to estimate the effect of the potential predictors. Based on our study, we believe that changes in traffic laws affect traffic fatalities rate. After evaluating linear models, fixed effects model and random effects model, we believe that the fixed effects model is the most appropriate model for this dataset. See details in the sections below.
 
 ```{r load data, echo = TRUE, include = FALSE}
 load(file = "./data/driving.RData")
@@ -286,7 +286,7 @@ df <- df %>%
 
 >  Wooldridge sourced the data from the National Highway Traffic Safety Administration (NHTSA). Since the early 1980s, NHTSA has been obtaining, from various states, computer data files coded from police accident reports.  NHTSA maitains these data files at its National Center for Statistics and Analysis (NCSA). NCSA’s goal is to include all states in the program over time, providing a complete census of national traffic statistics. See this [link](https://onlinelibrary.wiley.com/doi/epdf/10.1111/j.1465-7287.2007.00039.x?saml_referrer=)
 
-> After our data processing work, the clean dataset (df) has 25 columns, see Appendix 1.2. These fields include: 1) index variables (year_of_observation, state, year); 2) nine fatality variables: There are three measurements (fatality count, fatality count per 100M miles and fatality rate). Each measurement is provided for total, nighttime and weekend; 3) eight traffic laws indicators (seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, speed_limit, blood_alcohol_limit), two driving variables (vehicle_miles, vehicle_miles_per_capita), and three economics and demographic variables (statepop, unemployment_rate, pct_population_14_to_24). 
+> After our data processing work, the clean dataset has 25 columns, see Appendix 1.2. These fields include: 1) index variables (year_of_observation, state, year); 2) nine fatality variables: There are three measurements (fatality count, fatality count per 100M miles and fatality rate). Each measurement is provided for total, nighttime and weekend; 3) eight traffic laws indicators (seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, speed_limit, blood_alcohol_limit), two driving variables (vehicle_miles, vehicle_miles_per_capita), and three economics and demographic variables (statepop, unemployment_rate, pct_population_14_to_24). 
 
 ```{r clean-data, include=FALSE}
 # Appendix 1.2
@@ -573,7 +573,7 @@ Estimate a linear regression model of *totfatrte* on a set of dummy variables fo
 - Are the uncertainty estimate reliable, unbiased estimates of sampling based variability? Or, are they biased due to the way that the data is structured?
 ```
 
-> As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is. See Appendix 1.5 "Prelim" for summary results.
+> As a start, fitting a linear model helps identify significant explanatory variables and evaluate whether the linear relationship exists and how strong the linear relationship is. See Appendix 1.5 the "Prelim" column for the model summary results.
 
 ```{r simple-linear-model, results='hide'}
 mod.lm1 <- lm((total_fatalities_rate) ~ year_of_observation, data = df)
@@ -615,7 +615,7 @@ If it is appropriate, include transformations of these variables. Please careful
 
 > In the EDA section, we processed data and examined the histograms of continuous variables. We noted right-skewness in the distribution and applied the log transformation to total_fatalities_rate, unemployment_rate, and vehicle miles per capita to normalize the distribution. 
 
-> In the summary notes of our EDA section, we identified the key variables that can explain total fatalities rate, which assign with the variables that we will use in the expanded model. See the model results in Table 1 and Appendix 1.5 in the sections below.
+> In the summary notes of our EDA section, we identified the key variables that can explain total fatalities rate, which align with the variables that we will use in the expanded model. See the model results in Table 1 and Appendix 1.5 in the sections below.
 
 ```{r}
 mod.lm2 <- lm(
@@ -653,7 +653,7 @@ coeftest(mod.lm2, vcov. = vcovHC, type = "HC1")
 
 > Every state in the United States has laws making it illegal to operate a motor vehicle while under the influence of alcohol. In each state, the blood alcohol content (BAC) has a legal limit of 0.08% or 0.1% for ordinary, non-commercial vehicles. 
 
-> blood_alcohol_limit of 0.1 is the base value in this model. The estimated coefficient on *blood alcohol limit 0.08* is -0.045 and significantly different from zero at 5%. The interpretation of this coefficent is that changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower (we took the exponent of the coefficient, given the log form of total fatalities rate in the model). 
+> blood_alcohol_limit of 0.1 is the base value in this model. The estimated coefficient on *blood alcohol limit 0.08* is -0.045 and significantly different from zero at 5%. The interpretation of this coefficent is that holding other factors constant, changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower (we took the exponent of the coefficient, given the log form of total fatalities rate). 
 
 ```{r, echo=FALSE}
 # coefficient of blood_alcohol_limit0.08
@@ -668,7 +668,7 @@ round(exp(blood_alcohol_limit0.08_coef) - 1, 4)
 
 - Do *per se laws* have a negative effect on the fatality rate? 
 
-> Yes, the estimated coefficient on *per se laws* is -0.022, which aligns with our expectation. However, this coefficient is not significantly different from zero in this model. The interpretation is that changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17% (we took the exponent of the coefficient, given the log form of total fatalities rate in the model). However, this effect is not statistically significant.
+> Yes, the estimated coefficient on *per se laws* is -0.022 and aligns with our expectation. However, this coefficient is not significantly different from zero in this model. The interpretation is that holding other factors constant, changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17% (we took the exponent of the coefficient, given the log form of total fatalities rate). However, this effect is not statistically significant.
 
 ```{r, echo=FALSE}
 # coefficient of per_se_laws
@@ -700,7 +700,7 @@ exp(seatbelt1_coef) - 1
 
 Re-estimate the **Expanded Model** using fixed effects at the state level. 
 
-> We used the same set of variables in the **Expanded Model** and added factor(state) to account for time-invariant fixed effect in the State-level fixed effects model.
+> We used the same set of variables in the **Expanded Model** and added factor(state) to account for time-invariant fixed effects in the State-level fixed effects model.
 
 ```{r, results='hide', echo=TRUE}
 # estimate the fixed effects regression with plm()
@@ -881,7 +881,7 @@ stargazer(mod.lm1, mod.lm2, mod.fe, re.model,
 
 > Since the null hypothesis for the Hausman test is rejected, the last assumption is not met. Thus we should not use the random effect model to estimate the coefficients since the estimates will not likely to be consistent.
 
-> The random effects model assumes the individual unobserved heterogeneity is uncorrelated with the independent variables. However, the Hausman test shows strong evidence that correlation exists. Therefore, using the random effects model for this dataset could produce bias in parameters estimates. This bias does not arise in the fixed effects model, because the fixed effects model assumes that the omitted fixed effects can be correlated with the other variables. Fixed effects models remove the effect of time-invariant variables so we can assess the net effect of the other predictors on the response variable (total traffic fatalities rate).
+> The random effects model assumes the individual unobserved heterogeneity is uncorrelated with the independent variables. However, the Hausman test shows strong evidence that correlation exists. Therefore, using the random effects model for this dataset could produce bias in parameters estimates. This bias does not arise in the fixed effects model, because the fixed effects model assumes that the time-invariant fixed effects can be correlated with the other variables. Fixed effects models remove the effect of time-invariant variables so we can assess the net effect of the other predictors on the response variable (total traffic fatalities rate).
 
 > Given the Hausman test result, the random effects model is also not likely to be efficient, which means its variance would not be minimum or stable causing the standard errors to be biased and test statistics to be not reliable. 
 
@@ -990,13 +990,13 @@ Now, use these changes in driving to make forecasts from your models.
 ```
 
 #TODO: add the new beta values below
-> Holding everything else constant, if the number of miles driven per capita increased by 5.0%, the number of traffic fatalities would increase by $5% * \beta = 3.8%$.
+> Holding other factors constant, if vehicle miles per capita increases by 5.0%, the traffic fatalities rate would increase by $5% * \beta = 3.8%$.
 
 ```{asis, echo=FALSE}
 - Suppose that the number of miles driven per capita, decreased by as much as the COVID bust. Using the FE estimates, what would the consequences be on the number of traffic fatalities? Please interpret the estimate.
 ```
 
-> Holding everything else constant, if the number of miles driven per capita decreased by 39.1%, the number of traffic fatalities would increase by $-39.1% * \beta = -29.5%$. We should be cautious here since the change in miles driven per capita is very large, so the log transformation interpretation might not be accurate.
+> Holding other factors constant, if vehicle miles per capita decreases by 39.1%, the traffic fatalities rate would increase by $-39.1% * \beta = -29.5%$. We should be cautious here since the change in miles driven per capita is very large, so the log transformation interpretation might not be accurate.
 
 # (5 points) Evaluate Error 
 
