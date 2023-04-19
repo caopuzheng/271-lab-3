@@ -328,9 +328,7 @@ df_avg %>%
   geom_text(
     hjust = 0, vjust = -0.5, size = 2.5
   ) +
-  #theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
-
   labs(title = "Average Total Fatalities Rate by Year") +
   xlab("Year") +
   ylab("Average Total Fatalities Rate %")
@@ -425,7 +423,7 @@ df %>%
 
 > Figure 4 below compares the original data vs. log-transformed data of several variables: vehicle_miles, vehicle_miles_per_capita, statepop, pct_population_14_to_24, unemployment_rate. The log transformation seemed to improve the relationship between some of these explanatory variables and total fatality rates, as the original data was more skewed. We decided to use log transformation for our interpretation of vehicle_miles, vechicle_miles_per_capita, statepop and unemployment_rate.
 
-> Total fatalities rate is positively correlated with unemployment_rate and percentage of population aged 14-24. Total fatalities rate is negatively correlated with vehicle miles and state population which is not intuitive. We interpret this as population and vehicle miles are both increasing with time, so are other potential factors (e.g. car quality, technology, road conditions, etc.). we noted total fatalities rate is positively correlated with vehicle miles per capita, which is consistent with our background knowledge. Therefore, we will use vehicle miles per capita, instead of vehicle miles and state population separately.
+> Total fatalities rate is positively correlated and percentage of population aged 14-24. Total fatalities rate is negatively correlated with vehicle miles and state population which is not intuitive. We interpret this as population and vehicle miles are both increasing with time, so are other potential factors (e.g. car quality, technology, road conditions, etc.). we noted total fatalities rate is positively correlated with vehicle miles per capita, which is consistent with our background knowledge. Therefore, we will use vehicle miles per capita, instead of vehicle miles and state population separately.
 
 ```{r pairplot-on-feature-of-interest-continuous, fig.align='center', out.width="65%", echo=FALSE, fig.cap="Continous Explanatory Variables Effect on Total Fatality Rate"}
 df %>%
@@ -554,7 +552,7 @@ As with every EDA this semester, the goal of this EDA is not to document your ow
 
 > 2) We conducted comprehensive data exploratory work by using extensive plots to visualize and examine the distribution of each variable, relationship between the total fatalities rate and the potential explanatory variables (including the log form of several variables), as well as the correlation among the variables. 
 
-> 3) We noted a declining trend of the average of total fatalities rates over the years, with state-level trend variations.  However, year/time by itself does not fully explain fatalities rates. There are many other factors that affect the total fatalities rates over the years.  We had three key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible and positive relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). and finally c) the improvement of technology and road conditions over time can cause lower fatalities. We believe that these potential explanatory variables should be included in the subsequent modeling work.
+> 3) We noted a declining trend of the average of total fatalities rates over the years, with state-level trend variations.  However, year/time by itself does not fully explain fatalities rates. There are many other factors that affect the total fatalities rates over the years.  We had three key observations that could explain the changes in total fatalities rates over the period: a) stricter traffic laws (as indicated in seatbelt, zero_tolerance_law, graduated_drivers_license_law, per_se_laws, minimum_drinking_age, speed_limit_70plus, blood_alcohol_limit) tend to associate with lower total fatalities rate. b) there is a sensible relationship between total fatalities rate and each of the three economics/demographic variables (pct_population_14_to_24, unemployment_rate_log and vehicle_miles_per_capita_log). and finally c) the improvement of technology and road conditions over time can cause lower fatalities. We believe that these potential explanatory variables should be included in the subsequent modeling work.
 
 # (15 points) Preliminary Model
 
@@ -589,11 +587,9 @@ forecast::checkresiduals(mod.lm1)
 
 > We expected the total fatalities rate to decline over the years given our EDA observations. This model shows whether a given year has a linear relationship with total fatalities rate, with 1980 as the base year in the linear model. There is strong statistical evidence that all the years (except for 1981) are negatively related to total fatalities rate at the significance level of 0. The negative relationship aligns with the decreasing trend observed in EDA. Year 1981 is not a significant variable in this model. 
 
-> As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time by itself does not fully explain the changes in the fatalities rates. Many other factors (e.g. changes in law, economics and demographics, and technology) could explain the changes in total fatalities rates over the period, as noted in the summary notes of the above EDA section. This introduces omitted variable bias. 
+> As noted in our EDA work, the average total fatalities rate was 24% in 1980 and by 2004 the average total fatalities decreased down to 16%. This linear model shows statistically significant relationship between time and total fatalities rates. However, based on our expericence, time by itself does not fully explain the changes in the fatalities rates. Many other factors (e.g. changes in law, economics and demographics, and technology) could explain the changes in total fatalities rates over the period, as noted in the summary notes of the above EDA section. This dataset is structured by state and by year with many other factors. This introduces omitted variable bias. 
 
-> Model residuals have large fluctuations for each year and are not constant with zero mean expectation. This violates one of the key classical linear model assumptions - linear conditional mean. The parameter estimates are biased and not reliable. The distribution of residuals is not normal. variance is not constant (heteroskedasticity issues). The Breusch-Godfrey test for serial correlation has a p-value much less than 0.05, suggesting serial correlation. The ACF plot shows significant positive autocorrelation of many lags. With positive serial correlation, the standard errors/uncertainty estimates are understated and the statistical inferences are not reliable.
-
-> We pulled heteroskedasticity-robust standard errors and noted the HC errors are higher than the standard errors. This dataset is structured by state and by year with many other factors. Using this data structure and year as the sole variable, this model has omitted variables bias. 
+> Model residuals have large fluctuations for each year and are not constant with zero mean expectation. This violates one of the key classical linear model assumptions - linear conditional mean. The parameter estimates are biased and not reliable. The distribution of residuals is not normal. variance is not constant (heteroskedasticity issues). The Breusch-Godfrey test for serial correlation has a p-value much less than 0.05, suggesting serial correlation. The ACF plot shows significant positive autocorrelation of many lags. With positive serial correlation, the standard errors/uncertainty estimates are understated and the statistical inferences are not reliable. Because of this, we used heteroskedasticity-robust standard errors which are notably higher than the normal standard errors.
    
 # (15 points) Expanded Model 
 ```{asis, echo=FALSE}
@@ -632,7 +628,7 @@ mod.lm2 <- lm(
 )
 ```
 
-> Parameter estimates for all years are negative, similar to the preliminary model. However, a few added variables have unintuitive signs and are not sensible: 1) seatbelt 2 (secondary seatbelt) has a positive coefficient compared to no seatbelt; 2) unemployment_rate_log has a positive coefficient.
+> Parameter estimates for all years are negative, similar to the preliminary model. However, a few added variables have unintuitive signs and are not sensible, for example: seatbelt 2 (secondary seatbelt) has a positive coefficient compared to no seatbelt (even though unsignificant).
 
 > Figure 8 shows the model residuals analysis.
 
@@ -653,7 +649,7 @@ coeftest(mod.lm2, vcov. = vcovHC, type = "HC1")
 
 > Every state in the United States has laws making it illegal to operate a motor vehicle while under the influence of alcohol. In each state, the blood alcohol content (BAC) has a legal limit of 0.08% or 0.1% for ordinary, non-commercial vehicles. 
 
-> blood_alcohol_limit of 0.1 is the base value in this model. The estimated coefficient on *blood alcohol limit 0.08* is -0.045 and significantly different from zero at 5%. The interpretation of this coefficent is that holding other factors constant, changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower (we took the exponent of the coefficient, given the log form of total fatalities rate). 
+> blood_alcohol_limit of 0.1 is the base value in this model. The estimated coefficient on *blood alcohol limit 0.08* is -0.045 and significantly different from zero at 5%. The interpretation is: holding other factors constant, changing the legal blood alcohol limit from 0.10% to 0.08% will cause the traffic fatalities rate to be 4.4% lower  (or 0.956 times as big as the original fatalities rate). For example, if the fatalities rate with 0.1% blood alcohol limit was 20%, the estimated fatalities rate would be 19.12% with 0.08% blood alcohol limit.
 
 ```{r, echo=FALSE}
 # coefficient of blood_alcohol_limit0.08
@@ -665,10 +661,9 @@ blood_alcohol_limit0.08_coef <- mod.lm2$coefficients[26]
 round(exp(blood_alcohol_limit0.08_coef) - 1, 4)
 ```
 
-
 - Do *per se laws* have a negative effect on the fatality rate? 
 
-> Yes, the estimated coefficient on *per se laws* is -0.022 and aligns with our expectation. However, this coefficient is not significantly different from zero in this model. The interpretation is that holding other factors constant, changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17% (we took the exponent of the coefficient, given the log form of total fatalities rate). However, this effect is not statistically significant.
+> Yes, the estimated coefficient on *per se laws* is -0.022 and aligns with our expectation. However, this coefficient is not significantly different from zero in this model. The interpretation is that holding other factors constant, changing the per se laws from no (0) to yes (1) will cause traffic fatalities rate to decrease by 2.17% (or 0.9783 times as big as the original fatalities rate). However, this effect is not statistically significant.
 
 ```{r, echo=FALSE}
 # coefficient of per_se_laws
@@ -694,7 +689,6 @@ seatbelt1_coef <- mod.lm2$coefficients[29]
 # we will take the exponent of the coefficient to get the effect
 exp(seatbelt1_coef) - 1
 ```
-
 
 # (15 points) State-Level Fixed Effects 
 
